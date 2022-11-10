@@ -3,11 +3,21 @@ import ReactDOM from 'react-dom/client';
 import './index.css'
 
 class Square extends React.Component {
+    constructor(props){
+        // JavaScript 클래스에서 하위 클래스의 생성자를 정의할 때 항상 super를 호출해야합니다. 모든 React 컴포넌트 클래스는 생성자를 가질 때 super(props) 호출 구문부터 작성해야 합니다.
+        super(props);
+        this.state = {
+            value: null,
+        };
+    }
     render() {
         return (
-            <button className="square"
-                onClick={() => { console.log("click") }}>
-            {this.props.value}
+            <button
+                className="square"
+                onClick={() => {
+                    this.setState({value : 'X'})
+                }}>
+            {this.state.value}
             </button>
         );
     }
