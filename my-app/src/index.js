@@ -27,9 +27,9 @@ class Board extends React.Component {
         const squares = this.state.squares.slice(); // 복사
 
         // 누군가가 승리하거나 Square가 이미 채워졌다면 Board의 handleClick 함수가 클릭을 무시
-        if (calculateWinner(squares) || squares[i]){{
+        if (calculateWinner(squares) || squares[i]){
             return;
-        }}
+        }
 
         squares[i] = this.state.xIsNext ? 'X': 'O';
         this.setState({
