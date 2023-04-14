@@ -1,0 +1,49 @@
+# useAxios
+
+- 첫번째 인자 : url
+- 두번째 인자 : headers, 추가할 데이터를 담은 객체 형식의 데이터 작성
+- 렌더링될 떄 최초로 한 번 fetchData 함수 실행 -> response, error, loading을 return + params라는 인자를 받음
+    - response: 요청 방식에 따른 데이터
+    - error: 요청에 성공하지 못했을 때 에러 메시지
+    - loading: 요청이 완료되기 전까지 사용자에게 보여질 메시지를 컨트롤하는 역할
+
+# 사용
+```jsx
+import useAxios from './useAxios';
+
+function App() {
+  const { response, error, loading } = useAxios({
+    method: 'GET',
+    url: '/posts',
+  });
+//  {url, method, body, headers}로 구성된 객체를 생성하고 useAxios 에 인수를 전달하여 HTTP 호출을 수행합니다.
+
+  return (
+    <div className="app">
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <>
+          <h1>게시글 목록</h1>
+          <ul>
+            {response && response.map(
+              (res, index) => 
+                <li key={index}>
+                  <h1> 제목 : 
+                    {error && error.message}
+                    {res && res.title}
+                  </h1>
+                  <p>{res.body}</p>
+                </li>
+              
+            )}    
+          </ul>
+        </>
+        
+      )}
+    </div>
+  );
+};
+
+export default App;
+```
