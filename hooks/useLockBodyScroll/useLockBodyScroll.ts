@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
 function useLockBodyScroll(): void {
     // useLaoutEffect callback return type is "() => void" type
