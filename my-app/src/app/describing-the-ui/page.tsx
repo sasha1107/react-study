@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import Markdown from './md/Markdown.mdx';
+import MD1 from './md/1.mdx';
 
 export default function page() {
     return (
         <div>
-            <Markdown />
+            <MD1/>
         </div>
     );
 }

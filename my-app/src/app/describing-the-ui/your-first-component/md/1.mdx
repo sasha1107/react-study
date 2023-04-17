@@ -1,0 +1,74 @@
+export const Box = ({children, color}) => (
+    <div
+        style={{
+        backgroundColor: color,
+        borderRadius: '8px',
+        padding: '0.5rem 1.5rem',
+        }}>
+        {children}
+    </div>
+);
+
+# Your First Component
+
+## 컴포넌트란 ?
+
+> UI를 만드는 블럭들
+
+리액트는 마크업 + CSS + JS를 재사용 가능한 UI 요소인 component로 결합
+
+-   내부적으로는 동일한 HTML 태그 사용
+-   컴포넌트를 재사용하여 개발 속도를 높일 수 있다.
+
+- - -
+
+## Defining a component
+
+### 전통적인 웹페이지 만들기
+
+마크업 + JS로 인터랙션(상호작용) 추가
+
+### React Component
+
+-   리액트는 동일한 기술을 사용하면서, 인터랙션(상호작용)을 우선시
+-   JSX 문법으로 작성(자바스크립트 내부에 마크업을 삽입)
+
+> **리액트 컴포넌트**는 마크업을 뿌릴 수 있는 자바스크립트 함수이다.
+
+> ⚠️ 리액트 컴포넌트는 일반 자바스크립트 함수지만, 함수 이름은 대문자로 시작해야 한다. 안그러면 작동하지 않음!
+
+- - - 
+
+## Nesting and organizing components
+
+```
+<Gallery>
+    <Profile />
+    <Profile />
+    <Profile />
+</Gallery>
+```
+
+`Gallery`가 부모 컴포넌트, `Profile`이 자식 컴포넌트
+
+`Profile` 컴포넌트가 `Gallery` 컴포넌트 내부에서 렌더링된다.
+
+> 🪄 리액트에서는 컴포넌트를 한 번만 정의하고, 여러 곳에서 여러 번 원하는 만큼 사용할 수 있다
+
+<Box color="#fef5e7">
+### 🚨 주의
+
+컴포넌트는 다른 컴포넌트를 렌더링할 수 있지만, 해당 정의를 중첩해서는 안 된다.
+
+```
+export default function Gallery() {
+  // 🔴 Never define a component inside another component!
+    function Profile() {
+        // ...
+    }
+  // ...
+}
+```
+
+-   자식 컴포넌트가 부모로부터 데이터가 필요하다면, 중첩 정의대신 `props`로 전달한다.
+</Box>

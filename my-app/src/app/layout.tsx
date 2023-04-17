@@ -2,6 +2,7 @@ import { Providers } from "./Providers"
 import Header from "./Header"
 import Navbar from "./Navbar"
 import "./default.css"
+import { Suspense } from "react"
 
 export const metadata = {
   title: 'React Docs',
@@ -20,7 +21,9 @@ export default function RootLayout({
           <Header />
           <Navbar />
           <div className="pl-72 p-4 h-full min-h-full min-h-screen">
-          {children}
+            <Suspense fallback={<p>loading...</p>}>
+              {children}
+            </Suspense>
           </div>
         </Providers>
       </body>

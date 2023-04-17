@@ -1,0 +1,54 @@
+# Describing the UI
+
+리액트는 UI 렌더링을 위한 자바스크립트 라이브러리이다.
+리액트를 사용하면 재사용 가능하고 중첩 가능한 컴포넌트로 UI를 결합할 수 있다.
+
+<br/>
+
+# Your first component 
+
+### 리액트 컴포넌트란?
+
+> 마크업을 뿌릴 수 있는 자바스크립트 함수
+
+<br/>
+
+# 컴포넌트 import, export
+
+하나의 파일에서 여러 개의 컴포넌트를 선언할 수 있지만, 큰 파일은 탐색하기 어려울 수 있다.
+이를 위해 컴포넌트를 다른 파일로 분리할 수 있여 `export` / `import` 해 사용할 수 있다.
+
+## export {} vs export default
+
+<table>
+<thead>
+    <tr>
+        <th>
+            export {}
+        </th>
+        <th>
+            export default
+        </th>
+    </tr>
+</thead>
+
+<tbody>
+    <tr>
+        <td>
+            import 할 때 무조건 export 한 객체나 함수 이름으로 해야 함
+        </td>
+        <td>
+            import 할 때 원하는 이름으로 import 할 수 있음
+        </td>
+    </tr>
+    <tr>
+        <td>
+            import 할 때 반드시 중괄호로 가져와야 한다.
+        </td>
+        <td>
+            import 할 때 중괄호 필요 X
+        </td>
+    </tr>
+</tbody>
+
+</table>

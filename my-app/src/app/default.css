@@ -11,34 +11,52 @@ h1 {
     display: block;
     font-size: 2em;
     font-weight: bold;
+    margin-top: 0.67em;
+    margin-bottom: 0.67em;
 }
 
 h2 {
     display: block;
     font-size: 1.5em;
     font-weight: bold;
+    margin-top: 0.83em;
+    margin-bottom: 0.83em;
 }
 
 h3 {
     display: block;
     font-size: 1.17em;
     font-weight: bold;
+    margin-top: 1em;
+    margin-bottom: 1em;
 }
 
 h4 {
     display: block;
+    margin-top: 1.33em;
+    margin-bottom: 1.33em;
+    margin-left: 0;
+    margin-right: 0;
     font-weight: bold;
 }
 
 h5 {
     display: block;
     font-size: 0.83em;
+    margin-top: 1.67em;
+    margin-bottom: 1.67em;
+    margin-left: 0;
+    margin-right: 0;
     font-weight: bold;
 }
 
 h6 {
     display: block;
     font-size: 0.67em;
+    margin-top: 2.33em;
+    margin-bottom: 2.33em;
+    margin-left: 0;
+    margin-right: 0;
     font-weight: bold;
 }
 
@@ -78,8 +96,26 @@ pre {
     color: #ffffff;
     border-radius: 10px;
 }
+code {
+    background-color: rgba(175, 184, 193, 0.2);
+    color: #24292f;
+    border-radius: 6px;
+    padding: 0.2em 0.4em;
+    font-size: 0.9em;
+}
+pre code{
+    background-color: #16181d;
+    color: #ffffff;
+}
 
-th, td {
+th,
+td {
     border: 1px solid gray;
     border-collapse: collapse;
+    padding: 0.4em;
 }
+
+th {
+    background-color: rgba(175, 184, 193, 0.2);
+}
+
