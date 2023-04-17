@@ -23,8 +23,6 @@ const nextConfig = {
   experimental: {
     appDir: true,
   },
-  assetPrefix: `/${repository}/`,
-  basePath: `/${repository}`,
 }
 module.exports = withMDX(nextConfig)
 
