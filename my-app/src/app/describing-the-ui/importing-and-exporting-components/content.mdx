@@ -1,0 +1,166 @@
+import {
+    Accordion,
+    AccordionItem,
+    AccordionButton,
+    Box,
+    AccordionIcon,
+    AccordionPanel,
+    Card,
+    CardBody,
+    Divider,
+    Table,
+    Thead,
+    Tbody,
+    Tfoot,
+    Tr,
+    Th,
+    Td,
+    TableCaption,
+    TableContainer,
+    Code,
+} from '@chakra-ui/react';
+
+export const ColorBox = ({ children, color }) => (
+    <div
+        style={{
+            backgroundColor: color,
+            borderRadius: '8px',
+            padding: '0.5rem 1.5rem',
+        }}
+    >
+        {children}
+    </div>
+);
+
+# 컴포넌트 Importing and Exporting
+
+컴포넌트의 마법은 재사용가능성(reusability)에 있다.
+
+많은 컴포넌트를 중첩함에 따라 파일 분리의 필요성이 생긴다.
+
+## root 컴포넌트
+
+-   CRA로 생성된 프로젝트의 경우 일반적으로 `App.js`
+-   Next.js와 같은 파일 기반 라우팅이 있는 프레임워크를 사용하는 경우 루트 컴포넌트는 페이지마다 다르다.
+
+---
+
+## Exporting and importing a component
+
+하나의 파일에서 여러 개의 컴포넌트를 선언할 수 있지만, 큰 파일은 탐색하기 어려울 수 있다.
+
+이를 위해 컴포넌트를 다른 파일로 분리할 수 있여 `export` / `import` 해 사용할 수 있다.
+
+### export {} vs export default
+
+<table>
+<thead>
+    <tr>
+        <th>
+            export \{\} (named)
+        </th>
+        <th>
+            export default
+        </th>
+    </tr>
+</thead>
+
+<tbody>
+    <tr>
+        <td>
+            import 할 때 무조건 export 한 객체나 함수 이름으로 해야 함
+        </td>
+        <td>
+            import 할 때 원하는 이름으로 import 할 수 있음
+        </td>
+    </tr>
+    <tr>
+        <td>
+            import 할 때 반드시 중괄호로 가져와야 한다.
+        </td>
+        <td>
+            import 할 때 중괄호 필요 X
+        </td>
+    </tr>
+    <tr>
+        <td>
+            `export function Button() {}`
+        </td>
+        <td>
+            `export default function Button() {}`
+        </td>
+    </tr>
+    <tr>
+        <td>
+            `import { Button } from './Button.js';`
+        </td>
+        <td>
+            `import Button from './Button.js';`
+        </td>
+    </tr>
+    <tr>
+        <td>
+            여러 컴포넌트와 값을 내보내는 경우 사용
+        </td>
+        <td>
+            파일이 하나의 컴포넌트만 내보내는 경우 주로 사용
+        </td>
+    </tr>
+</tbody>
+</table>
+
+> 파일은 하나의 default export 만 가질 수 있고, named export는 여러 개 가능하다
+
+> `default export` / `named export` 중 알맞은 걸 선택하여 통일되게 사용할 것을 권장!
+
+---
+
+<br />
+
+<ColorBox color="#f4fbf9">
+### 확장자 생략
+
+다음과 같이 import 할 때 파일 확장자(`.js`)가 나타나지 않을 수 있다.
+
+```
+import Gallery from './Gallery';
+```
+
+확장자가 없어도 리액트에서 잘 작동한다.
+[참고](https://developer.mozilla.org/ko/docs/Web/JavaScript/Guide/Modules)
+
+</ColorBox>
+
+<br/>
+
+<Card>
+    <CardBody>
+        ## 요약
+        
+        - 루트 컴포넌트 : `App.js`
+        - export default, named export
+            <TableContainer>
+                <Table size='md'>
+                    <Thead>
+                        <Tr>
+                            <Th>문법</Th>
+                            <Th>export</Th>
+                            <Th>import</Th>
+                        </Tr>
+                    </Thead>
+                    <Tbody>
+                        <Tr>
+                            <Td>Default</Td>
+                            <Td>`export default function Button() {}`</Td>
+                            <Td>`import Button from './Button.js';`</Td>
+                        </Tr>
+                        <Tr>
+                            <Td>Named</Td>
+                            <Td>`export function Button() {}`</Td>
+                            <Td>`import {Button} from './Button.js';`</Td>
+                        </Tr>
+                    </Tbody>
+                </Table>
+            </TableContainer>
+    </CardBody>
+</Card>

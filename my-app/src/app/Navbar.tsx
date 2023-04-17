@@ -28,6 +28,20 @@ export default function Navbar() {
                     </AccordionButton>
                     <AccordionPanel pb={4}>
                         <Link href='../../describing-the-ui/your-first-component'>Your First Component</Link>
+                        <br/>
+                        <Link href='../../describing-the-ui/importing-and-exporting-components'>Importing and Exporting Components</Link>
+                        <br/>
+                        <Link href='../../describing-the-ui/writing-markup-with-jsx'>Writing Markup with JSX</Link>
+                        <br/>
+                        <Link href='../../describing-the-ui/javascript-in-jsx-with-curly-braces'>JavaScript in JSX with Curly Braces</Link>
+                        <br/>
+                        <Link href='../../describing-the-ui/passing-props-to-a-component'>Passing Props to a Component</Link>
+                        <br/>
+                        <Link href='../../describing-the-ui/conditional-rendering'>Conditional Rendering</Link>
+                        <br/>
+                        <Link href='../../describing-the-ui/rendering-lists'>Rendering Lists</Link>
+                        <br/>
+                        <Link href='../../describing-the-ui/keeping-components-pure'>Keeping Components Pure</Link>
                     </AccordionPanel>
                 </AccordionItem>
 
