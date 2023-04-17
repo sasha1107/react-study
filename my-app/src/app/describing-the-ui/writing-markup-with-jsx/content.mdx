@@ -1,1 +1,106 @@
-# writing-markup-with-jsx
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    CardFooter,
+    Text,
+    Accordion,
+    AccordionItem,
+    AccordionButton,
+    AccordionPanel,
+    AccordionIcon,
+    Box,
+} from '@chakra-ui/react';
+
+# Writing Markup with JSX
+
+## JSX
+
+> 자바스크립트 파일 내에서 HTML과 유사한 마크업을 작성할 수 있는 자바스크립트용 syntax extenstion 이다.
+
+### 전통적인 방법
+
+-   콘텐츠: HTML
+-   디자인: CSS
+-   로직: JavaScript
+    -> 별도의 파일로 분리하고는 했다.
+
+<Card>
+    <CardBody>
+        <Text>
+            웹이 점점 더 인터랙티브해지면서, 로직이 점점 더 콘텐츠를 결정하게 됨
+        </Text>
+        <Text>
+            ➡️ 리액트에서 `로직`과 `마크업`이 같은 공간(컴포넌트)에 존재하는
+            이유!
+        </Text>
+    </CardBody>
+</Card>
+
+> JSX는 HTML과 비슷해보이지만 조금 더 엄격하고, 동적 정보를 표시할 수 있다.
+
+- - -
+
+## JSX의 규칙
+
+### 1. 단일 루트 요소 반환(Return a single root element)
+
+컴포넌트에서 여러 element들을 반환하려면 하나의 최상위 태그로 감싸 반환해야 한다.
+
+> 새로운 `<div>` 태그가 추가되는 것을 원하지 않는다면 <b>Fragment(`<></>`)</b>를 사용할 수 있다.<br/>
+> Fragment를 사용하면 브라우저 HTML 트리에 흔적을 남기지 않고 항목을 그룹화할 수 있다.
+
+<Accordion allowToggle>
+    <AccordionItem bg="rgb(243 244 253)" color="#575FB7">
+        <AccordionButton _expanded={{ bg: '#575FB7', color: 'white' }}>
+            <Box as="span" flex='1' textAlign='left'>
+            **심화 : 하나의 태그로 감싸져야 하는 이유는?**
+            </Box>
+            <AccordionIcon />
+        </AccordionButton>
+        <AccordionPanel>
+            JSX는 HTML 처럼 보이지만 내부적으로는 일반 자바스크립트 객체로 변환된다. 
+            배열로 wrapping 하지 않고는 두 개의 객체를 함수에서 반환할 수 없다.
+
+            > JSX looks like HTML, but under the hood it is transformed into plain JavaScript objects.<br/>
+            You can’t return two objects from a function without wrapping them into an array. <br/>This explains why you also can’t return two JSX tags without wrapping them into another tag or a Fragment.
+        </AccordionPanel>
+    </AccordionItem>
+</Accordion>
+
+### 2. 모든 태그 닫기
+
+JSX에서는 모든 태그가 명시적으로 닫혀야 한다.
+
+-   self-closing tags(`<img>` --> `<img />`)
+
+### 3. 카멜케이스 사용
+
+JSX로 작성된 어트리뷰트들은 자바스크립트 객체의 key로 변환된다.
+
+#### 자바스크립트 변수 이름 규칙
+- 하이픈(-)을 사용할 수 없다. --> **JSX에서 HTML 속성이 카멜케이스로 작성되는 이유** (ex.`stroke-width` -> `strokeWidth`)
+- 예약어를 사용할 수 없다. --> **`class`(예약어) 대신 `className`이 쓰이는 이유**
+
+> [어트리뷰트 전체보기](https://react.dev/reference/react-dom/components/common#focusevent-handler)
+
+<br/>
+<Card bg="#fef5e7">
+    <CardBody>
+        <Text fontSize="lg" as="b" color="tomato">🤔 예외</Text>
+
+        역사적인 이유로 `aria-*`및 `data-*`속성은 대시가 있는 HTML로 작성됨.
+    </CardBody>
+</Card>
+<br/>
+
+> [HTML -> JSX 변환기](https://transform.tools/html-to-jsx)
+
+- - -
+## 요약
+- 리액트 컴포넌트는 렌더링 로직과 마크업을 그룹화한다. (서로 관련되어 있기 때문에)
+- JSX과 HTML은 유사하지만, JSX는 조금 더 엄격하다.
+    - 하나의 루트 요소
+    - 모든 태그 닫기
+    - 카멜케이스 사용
+- 콘솔 에러메시지는 종종 마크업을 수정하는 올바른 방향을 알려준다.
