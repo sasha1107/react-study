@@ -1,3 +1,5 @@
+const debug = process.env.NODE_ENV !== 'production';
+const repository = 'react-study';
 
 const withMDX = require('@next/mdx')({
   extension: /\.mdx?$/,
@@ -21,6 +23,8 @@ const nextConfig = {
   experimental: {
     appDir: true,
   },
+  assetPrefix: `/${repository}/`,
+  basePath: `/${repository}`,
 }
 module.exports = withMDX(nextConfig)
 
