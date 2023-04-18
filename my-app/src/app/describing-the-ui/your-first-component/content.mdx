@@ -2,26 +2,14 @@ import {
     Accordion,
     AccordionItem,
     AccordionButton,
-    Box,
     AccordionIcon,
     AccordionPanel,
-    Card,
-    CardBody,
-    Divider
+    Divider,
+    Box
 } from '@chakra-ui/react';
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import atomOneDark from 'react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark.js';
-
-export const ColorBox = ({children, color}) => (
-    <div
-        style={{
-        backgroundColor: color,
-        borderRadius: '8px',
-        padding: '0.5rem 1.5rem',
-        }}>
-        {children}
-    </div>
-);
+import { CodeBlock } from '@/app/components/CodeBlock';
+import { RedCard } from '@/app/components/RedCard';
+import { WhiteCard } from '@/app/components/WhiteCard';
 
 # Your First Component
 
@@ -56,13 +44,13 @@ export const ColorBox = ({children, color}) => (
 ## Nesting and organizing components
 
 
-<SyntaxHighlighter language="javascript" style={atomOneDark}>
+<CodeBlock lang='html'>
 {`<Gallery>
     <Profile />
     <Profile />
     <Profile />
-</Gallery>}`}
-</SyntaxHighlighter>
+</Gallery>`}
+</CodeBlock>
 
 
 `Gallery`가 부모 컴포넌트, `Profile`이 자식 컴포넌트
@@ -71,12 +59,10 @@ export const ColorBox = ({children, color}) => (
 
 > 🪄 리액트에서는 컴포넌트를 한 번만 정의하고, 여러 곳에서 여러 번 원하는 만큼 사용할 수 있다
 
-<ColorBox color="#fef5e7">
-### 🚨 주의
-
+<RedCard title="주의">
 컴포넌트는 다른 컴포넌트를 렌더링할 수 있지만, 해당 정의를 중첩해서는 안 된다.
 
-<SyntaxHighlighter language="javascript" style={atomOneDark}>
+<CodeBlock lang="javascript">
 {`export default function Gallery() {
   // 🔴 Never define a component inside another component!
     function Profile() {
@@ -84,10 +70,10 @@ export const ColorBox = ({children, color}) => (
     }
   // ...
 }`}
-</SyntaxHighlighter>
+</CodeBlock>
 
 -   자식 컴포넌트가 부모로부터 데이터가 필요하다면, 중첩 정의대신 `props`로 전달한다.
-</ColorBox>
+</RedCard>
 
 
 <br/>
@@ -117,14 +103,10 @@ export const ColorBox = ({children, color}) => (
 </Accordion>
 <Divider/>
 
-<Card>
-    <CardBody>        
-        ## 요약
-        
-        - 리액트를 사용하면 재사용 가능한 UI 요소인 컴포넌트를 만들 수 있다.
-        - 리액트는 다음 규칙을 제외하면 일반적인 자바스크립트 함수이다.
-            - 이름은 항상 대문자로 시작
-            - JSX 마크업을 반환
-    </CardBody>
-</Card>
+<WhiteCard title="요약">
+- 리액트를 사용하면 재사용 가능한 UI 요소인 컴포넌트를 만들 수 있다.
+- 리액트는 다음 규칙을 제외하면 일반적인 자바스크립트 함수이다.
+    - 이름은 항상 대문자로 시작
+    - JSX 마크업을 반환
+</WhiteCard>
 
