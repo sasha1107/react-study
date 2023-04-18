@@ -1,1 +1,142 @@
-# javascript-in-jsx-with-curly-braces
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    CardFooter,
+    Text,
+    Accordion,
+    AccordionItem,
+    AccordionButton,
+    AccordionPanel,
+    AccordionIcon,
+    Box,
+} from '@chakra-ui/react';
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import atomOneDark from 'react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark.js';
+
+# 중괄호가 있는 JSX의 JavaScript
+
+JSX => 자바스크립트 파일 내에 HTML과 유사한 마크업 작성
+
+=> **렌더링 로직**과 **content** 같은 위치에 유지
+
+<br />
+<Card border='1px' borderColor='gray.100'>
+    <CardBody>
+        <Box mb={2}>
+            <Text fontSize='lg' as='b' color='cyan.600'>
+                JSX에서 중괄호 `{}`
+            </Text>
+        </Box>
+        중괄호를 사용하여 내부에 자바스크립트 코드를 작성할 수 있다.
+    </CardBody>
+</Card>
+<br />
+
+## 따옴표(quotes)로 문자열 전달
+
+JSX에 문자열 속성을 전달하려면 작은 따옴표(`'`)나 큰 따옴표(`"`)로 묶어야 한다
+
+<SyntaxHighlighter language='javascript' style={atomOneDark}>
+    {`export default function Avatar() {
+  return (
+    <img
+      className="avatar"
+      src="https://i.imgur.com/7vQD0fPs.jpg"
+      alt="Gregorio Y. Zara"
+    />
+  );
+}`}
+</SyntaxHighlighter>
+
+> `src`나 `alt` 속성에 텍스트를 동적으로 지정하려면?
+
+<br />
+<Text color='red.400' as='b'>
+    따옴표(`' "`)를 중괄호(`{}`)로 교체하여 자바스크립트의 value를 사용할 수
+    있다.
+</Text>
+<br />
+
+<SyntaxHighlighter language='javascript' style={atomOneDark}>
+    {`export default function Avatar() {
+  const avatar = 'https://i.imgur.com/7vQD0fPs.jpg';
+  const description = 'Gregorio Y. Zara';
+  return (
+    <img
+      className="avatar"
+      src={avatar}
+      alt={description}
+    />
+  );
+}`}
+</SyntaxHighlighter>
+
+## 중괄호 (`{}`)사용: 자바스크립트 세계로 들어가는 창
+
+<SyntaxHighlighter language='javascript' style={atomOneDark}>
+{`export default function TodoList() {
+  const name = 'Gregorio Y. Zara';
+  return (
+    <h1>{name}'s To Do List</h1>
+  );
+}`}
+</SyntaxHighlighter>
+
+name 변수에 값을 선언하고 중괄호를 사용하여 포함시킨다.
+함수 호출을 포함한 모든 자바스크립트 표현식은 중괄호 사이에서 작동한다. 
+
+
+### 중괄호 사용 위치
+
+1. JSX 태그 내부 텍스트로
+- ex) `<h1>{name}'s To Do List</h1>`
+
+2. `=` 할당 연산자 뒤
+- ex) `src={avatar}`
+
+
+### 중첩된 중괄호 (double curlies)
+
+문자열, 숫자 및 기타 자바스크립트 표현식 외에도 JSX에서 JS의 **객체**를 전달할 수 있습니다. 
+
+객체는 마찬가지로 다음과 같이 중괄호로 감싸진다. `{ name: "Hedy Lamarr", inventions: 5 }`
+
+
+<br/>
+<Card border='1px' borderColor='gray.100'>
+    <CardBody>
+        <Box mb={2}>
+            <Text fontSize="lg" as="b" color="cyan.600">
+                JSX에서 JS 객체 전달
+            </Text>
+        </Box>
+            따라서 JSX에서 자바스크립트 객체를 전달하려면 또다른 한 쌍의 중괄호를 사용하여 객체를 감싸야 한다.
+    </CardBody>
+</Card>
+<br/>
+
+JSX의 인라인 CSS에서 이를 흔하게 볼 수 있다.
+
+React에서는 인라인 스타일을 사용하는 것을 요구하지 않지만, 인라인 스타일이 필요한 경우에 `style` 속성에 객체를 전달한다.
+
+
+<SyntaxHighlighter language='javascript' style={atomOneDark}>
+{`export default function TodoList() {
+  return (
+    <ul style={{
+      backgroundColor: 'black',
+      color: 'pink'
+    }}>
+      <li>Improve the videophone</li>
+      <li>Prepare aeronautics lectures</li>
+      <li>Work on the alcohol-fuelled engine</li>
+    </ul>
+  );
+}`}
+</SyntaxHighlighter>
+
+# 요약
+- 따옴표 안의 JSX 속성은 문자열로 전달된다.
+- 중괄호를 사용하면 자바스크립트 로직과 변수를 마크업으로 가져올 수 있다.
+- `{{}}` 중첩된 중괄호는 특별한 구문이 아니라 JSX 중괄호 안에 들어 있는 자바스크립트 Object일 뿐이다.

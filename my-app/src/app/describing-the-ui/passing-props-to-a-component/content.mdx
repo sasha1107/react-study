@@ -1,1 +1,249 @@
-# passing-props-to-a-component
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import atomOneDark from 'react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark.js';
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    Text,
+    Box
+} from '@chakra-ui/react';
+
+# 컴포넌트에 props 전달하기
+
+리액트 컴포넌트는 props를 사용하여 서로 소통한다.
+
+모든 부모 컴포넌트는 정보를 props를 사용하여 자식 컴포넌트에게 전달해줄 수 있다.
+
+**props**는 HTML 속성을 상가시킬 수 있지만, 자바스크립트의 어떤 값이든 전달할 수 있다. (객체 ,배열, 함수, 값 등등..)
+
+
+## 익숙한 props
+
+**props**란 JSX 태그에 전달하는 정보이다.
+
+예) `className`, `src`, `width`, `height` 등은 `<img>` 태그에 전달할 수 있는 props 이다.
+
+`<img>` 태그에 전달할 수 있는 소품은 미리 정의되어 있다. ([HTML Standard](https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element))
+
+그러나 너는 너의 컴포넌트에 어떤 props든 전달할 수 있다.
+
+- - -
+
+## props를 내려보아요
+
+### STEP 1: 자식 컴포넌트에 props 전달
+
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`export default function Profile() {
+  return (
+    <Avatar
+      person={{ name: 'Lin Lanying', imageId: '1bX5QH6' }}
+      size={100}
+    />
+  );
+}}`}
+</SyntaxHighlighter>
+
+이제 `Avatar` 컴포넌트에서 이 props들을 읽을 수 있다.
+
+- - -
+
+### STEP 2: 자식 컴포넌트에서 props 읽기
+
+함수의 파라미터 자리에 중괄호(`{}`)로 감싸고 콤마(`,`)로 나열하여 props들을 읽어올 수 있다.
+이렇게 하면 `Avatar` 컴포넌트 내에서 props들을 변수처럼 활용할 수 있다.
+
+
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`function Avatar({ person, size }) {
+  // person and size are available here
+}`}
+</SyntaxHighlighter>
+
+`person`, `size` 사용하기
+
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`import { getImageUrl } from './utils.js' // 생략
+
+function Avatar({ person, size }) {
+  return (
+    <img
+      className="avatar"
+      src={getImageUrl(person)}
+      alt={person.name}
+      width={size}
+      height={size}
+    />
+  );
+}`}
+</SyntaxHighlighter>
+
+
+<br/>
+<Card bg="#fef5e7">
+    <CardBody>
+        <Box mb={2}>
+        <Text fontSize="lg" as="b" color="tomato">🤔 구조분해할당</Text>
+        </Box>
+        사실 리액트 컴포넌트는 **props**라는 객체의 하나의 인자만 허용한다.
+
+        대부분 props 전체가 필요하지는 않으므로 이를 개별 props로 <b>destructure(분해)</b>한다.
+
+        <SyntaxHighlighter language="javascript" style={atomOneDark}>
+        {`function Avatar(props) {
+        let person = props.person;
+        let size = props.size;
+        // ...
+        }}`}
+        </SyntaxHighlighter>
+
+        <SyntaxHighlighter language="javascript" style={atomOneDark}>
+        {`function Avatar({ person, size }) {
+        // ...
+        }}`}
+        </SyntaxHighlighter>
+    </CardBody>
+</Card>
+<br/>
+
+- - -
+
+## props의 기본값(default value) 지정
+
+구조분해할당한 props에 `=` 할당 연산자를 사용하여 기본값을 지정할 수 있다.
+
+### 지정한 기본값이 작동하는 경우
+- 해당 props가 없을 때
+- 해당 props가 `undefined` 일 때
+
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`function Avatar({ person, size }) {
+// ...
+}}`}
+</SyntaxHighlighter>
+
+
+<br/>
+<Card border='1px' borderColor='gray.100'>
+    <CardBody>
+        <Box mb={2}>
+            <Text fontSize="lg" as="b" color="cyan.600">
+                이런 경우에는 default value가 사용되지 않음
+            </Text>
+        </Box>
+        - `size={null}`
+        - `size={0}`
+    </CardBody>
+</Card>
+<br/>
+- - -
+
+## 스프레드 문법으로 props 전달
+
+종종, 전달되는 props가 반복적일 수 있다.
+
+반복되는 코드엔 아무런 문제가 없다. 오히려 더 쉽게 읽을 수 있다.
+
+그러나 때때로 간결함을 중시할 수도 있다.
+
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`function Profile({ person, size, isSepia, thickBorder }) {
+  return (
+    <div className="card">
+      <Avatar
+        person={person}
+        size={size}
+        isSepia={isSepia}
+        thickBorder={thickBorder}
+      />
+    </div>
+  );
+}`}
+</SyntaxHighlighter>
+
+`Profile`의 모든 파라미터를 `Avatar` 컴포넌트로 전달하고 있기 때문에
+다음 코드를 스프레드 문법을 사용하여 간결하게 전달할 수 있다.
+
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`function Profile(props) {
+  return (
+    <div className="card">
+      <Avatar {...props} />
+    </div>
+  );
+}`}
+</SyntaxHighlighter>
+
+
+<Card bg="red.100" mt={2} mb={2}>
+    <CardBody>
+        <Box mb={2}>
+        <Text fontSize="lg" as="b" color="red.600">🚨 경고</Text>
+        </Box>
+        스프레드 문법은 제한적으로 사용하라.
+    </CardBody>
+</Card>
+
+- - -
+
+## JSX를 children으로 전달
+
+JSX 태그 안에 콘텐츠를 중첩(nest) 하면 상위 컴포넌트는 `children`이라는 props로 nested된 콘텐츠를 수신한다.
+
+예를 들어 아래 `Card` 컴포넌트는 `Avatar` 컴포넌트를 `children` props로 받는다.
+
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`function Card({ children }) {
+  return (
+    <div className="card">
+      {children}
+    </div>
+  );
+}
+
+export default function Profile() {
+  return (
+    <Card>
+      <Avatar
+        size={100}
+        person={{ 
+          name: 'Katsuko Saruhashi',
+          imageId: 'YfeOqp2'
+        }}
+      />
+    </Card>
+  );
+}`}
+</SyntaxHighlighter>
+
+children props를 가진 컴포넌트는 부모 컴포넌트에서 임의의 JSX로 **"채워질"** 수 있는 **"구멍"**이 있는 컴포넌트라고 생각할 수 있습니다.
+
+
+## props는 항상 정적이지 않다.
+
+`props`는 처음 뿐만 아니라 모든 시점에서 컴포넌트의 데이터를 반영한다.
+
+하지만 `props`는 <Text as='b' color='red.500'>불변(immutable)</Text>하다. 
+
+컴포넌트가 `props`를 변경해야 할 때(예: 상호자 상호작용 또는 새 데이터에 대한 응답으로), 컴포넌트는 부모 컴포넌트에게 다른 `props`(새로운 object)를 전달해줄 것을 "**요청**"해야 한다.
+
+old props는 폐기되고, 자바스크립트 엔진은 old props가 차지하고 있던 메모리를 회수한다.
+
+<Card bg="red.100" mt={2} mb={2}>
+    <CardBody>
+        <Box mb={2}>
+        <Text fontSize="lg" as="b" color="red.600">🚨 경고</Text>
+        </Box>
+        props 변경을 시도하지 마세요. => `set state` 를 사용해야 함
+    </CardBody>
+</Card>
+
+# 요약
+
+- props를 전달하려면 JSX에 HTML 속성처럼 추가해라
+- props를 읽으려면 구조분해 할당을 사용해라.
+- missing props나 undefined인 props에 대응하는 default value를 지정할 수 있다.
+- 스프레드 문법으로 모든 props를 전달할 수 있지만, 남용하지 마세용
+- 중첩된 JSX: 부모 컴포넌트는 nested된 자식 컴포넌트를 `children` props로 받는다.
+- props를 변경할 수 없다.
+    - 상호작용이 필요한 경우 `set state`를 해야 한다.

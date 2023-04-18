@@ -7,7 +7,7 @@ export default function Header() {
     return (
         <div className='w-screen bg-black p-4 sticky top-0'>
             <Text fontSize={"xl"} className='text-[#149ECA]'>
-                React Beta
+                정수현의 React Beta
             </Text>
         </div>
     );
