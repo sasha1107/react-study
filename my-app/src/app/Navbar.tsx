@@ -87,7 +87,7 @@ export default function Navbar() {
                                 fontSize={'sm'}
                                 _hover={{ color: 'cyan.600' }}
                             >
-                                Rendering Lists
+                                리스트를 렌더링하기
                             </Text>
                         </Link>
                         <Link href='../../describing-the-ui/keeping-components-pure'>
@@ -96,7 +96,7 @@ export default function Navbar() {
                                 fontSize={'sm'}
                                 _hover={{ color: 'cyan.600' }}
                             >
-                                Keeping Components Pure
+                                컴포넌트를 순수하게 유지
                             </Text>
                         </Link>
                     </AccordionPanel>
