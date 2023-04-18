@@ -80,10 +80,11 @@ return <li className="item">{name}</li>;`}
 
 #### DRY한 코드
 <SyntaxHighlighter language="javascript" style={atomOneDark}>
-{`if (isPacked) {
-  return <li className="item">{name} ✔</li>;
-}
-return <li className="item">{name}</li>;`}
+{`return (
+  <li className="item">
+    {isPacked ? name + ' ✔' : name}
+  </li>
+);`}
 </SyntaxHighlighter>
 
 

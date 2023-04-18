@@ -1,1 +1,212 @@
-# Keeping Components Pure
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import atomOneDark from 'react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark.js';
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    Text,
+    Box,
+    Alert,
+    AlertIcon,
+    AlertDescription,
+} from '@chakra-ui/react';
+import { DeepDive } from '../../components/DeepDive'
+
+# 컴포넌트를 순수하게 유지
+
+## 순수 함수
+
+계산만 수행하며 그 이상은 수행하지 않는다.
+
+컴포넌트를 순수함수로만 엄격하게 작성하면, 코드 베이스가 처짐에 따라 당황스러운 버그와 예측할 수 없는 동작을 피할 수 있다.
+
+### 순수 함수의 조건
+
+-   **자신의 일을 생각힌다**
+
+호출되기 전에 존재했던 객체나 변수는 변경하지 않는다.
+
+-   **동일한 입력, 동일한 출력**
+
+동일한 입력이 주어지면 순수 함수는 항상 동일한 결과를 반환해야 한다.
+
+<br />
+<table>
+    <tr>
+        <th>순수함수</th>
+        <th>비순수함수</th>
+    </tr>
+    <tr>
+        <td>동일한 인수가 전달되면 언제나 동일한 값을 반환</td>
+        <td>
+            외부 상태에 따라 반환값이 달라진다.
+            <br />
+            외부 상태를 변경하는 부수효과가 있다.
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <SyntaxHighlighter language='javascript' style={atomOneDark}>
+                {`var count = 0;
+function increase(n) {
+    return ++n;
+}`}
+            </SyntaxHighlighter>
+        </td>
+        <td>
+            <SyntaxHighlighter language='javascript' style={atomOneDark}>
+                {`let num3 = 10
+function sum(num1, num2) {
+	return num1 + num2 + num3;
+}`}
+            </SyntaxHighlighter>
+        </td>
+    </tr>
+</table>
+
+<Card border='1px' borderColor='gray.100' mt={2} mb={2}>
+    <CardBody>
+        <Box mb={2}>
+            <Text fontSize="lg" as="b" color="cyan.600">
+                리액트는?
+            </Text>
+        </Box>
+            리액트는 작성하는 모든 컴포넌트가 순수함수라고 가정한다.
+
+            즉, 컴포넌트는 동일한 입력이 주어지면 항상 동일한 JSX를 반환해야 한다.
+    </CardBody>
+
+</Card>
+
+## 부작용(Side Effects): 의도하지 않은 결과를
+
+리액트의 렌더링 프로세스는 항상 순수해야 한다.
+
+컴포넌트는 JSX만 반환해야 하며, 렌더링 이전에 존재했던 객체나 변수를 변경하면 안 된다.
+
+<br/>
+<Alert status='warning'>
+    <AlertIcon />
+    <AlertDescription>다음은 이 규칙을 위반하는 컴포넌트이다.</AlertDescription>
+</Alert>
+
+
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`let guest = 0;
+
+function Cup() {
+  // Bad: changing a preexisting variable!
+  guest = guest + 1;
+  return <h2>Tea cup for guest #{guest}</h2>;
+}
+
+export default function TeaSet() {
+  return (
+    <>
+      <Cup />
+      <Cup />
+      <Cup />
+    </>
+  );
+}`}
+</SyntaxHighlighter>
+
+
+<Card border='1px' borderColor='gray.100' mt={2} mb={2}>
+    <CardBody>
+        <Box mb={2}>
+            <Text fontSize="lg" as="b" color="cyan.600">
+                 RESULT
+            </Text>
+        </Box>
+        ## Tea cup for guest #2
+        ## Tea cup for guest #4
+        ## Tea cup for guest #6
+    </CardBody>
+</Card>
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Thinking%20Face.png" alt="Thinking Face" width="80" height="80" />
+
+`Cup` 컴포넌트는 컴포넌트 외부에서 선언된 `guest` 변수를 읽고 쓰고 있다.
+
+`Cup` 컴포넌트를 여러 번 호출하면 다른 JSX가 생성된다!
+
+게다가, 다른 컴포넌트가 `guest`를 읽는 경우, 렌더링된 시점에 따라 다른 JSX도 생성된다.
+
+예측하지 못한 결과이다.
+
+- - -
+
+<Card border='1px' borderColor='gray.100' mt={2} mb={2}>
+    <CardBody>
+        <Box mb={2}>
+            <Text fontSize="lg" as="b" color="cyan.600">
+                문제 해결
+            </Text>
+        </Box>
+            `guest`를 props로 전달하자
+
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`function Cup({ guest }) {
+  return <h2>Tea cup for guest #{guest}</h2>;
+}
+
+export default function TeaSet() {
+  return (
+    <>
+      <Cup guest={1} />
+      <Cup guest={2} />
+      <Cup guest={3} />
+    </>
+  );
+}`}
+</SyntaxHighlighter>
+
+<Card border='1px' borderColor='gray.100' mt={2} mb={2}>
+    <CardBody>
+        <Box mb={2}>
+            <Text fontSize="lg" as="b" color="cyan.600">
+                 RESULT
+            </Text>
+        </Box>
+        ## Tea cup for guest #1
+        ## Tea cup for guest #2
+        ## Tea cup for guest #3
+    </CardBody>
+</Card>
+    </CardBody>
+</Card>
+
+<Card bg="#F3F4FD" mt={2} mb={2} border='1px' borderColor='gray.200'>
+    <CardBody>
+        <Box mb={2}>
+        <Text fontSize="lg" as="b" color="#575FB7">
+            📖 StrictMode로 비순수한 계산 감지
+        </Text>
+        </Box>
+        리액트에는 렌더링하는 동안 읽을 수 있는 세 가지 유형의 inputs가 있다.
+
+        - props
+        - state
+        - context
+
+        -> 이러한 입력은 항상 <b>read-only</b>로 취급해야 한다.
+
+        사용자 입력에 대한 응답으로 무언가를 변경하려면 `변수`에 쓰는 대신 `state`를 set해야 한다. 컴포넌트가 렌더링되는 동안 기존 변수나 객체를 변경해서는 안된다.
+
+        <br/>
+        리액트는 개발 중에 각 컴포넌트를 두 번씩 호출하는 <b>"StrictMode"</b>를 제공한다.
+
+        컴포넌트 함수를 두 번 호출함으로써 엄격 모드는 이러한 규칙을 위반하는 컴포넌트를 찾는데 도움을 준다.
+
+        엄격모드는 production에 영향을 미치지 않으므로 사용자를 위한 앱 속도를 저하시키지 않는다.
+
+        엄격 모드를 선택하려면 루트 구성 요소를 `<React.StrictMode>`로 감싸면 된다. 
+
+        일부 프레임워크는 기본적으로 이 작업을 수행한다.
+    </CardBody>
+</Card>
+
+<DeepDive title="apapapapapa">
+# dlfdf
+sdadas
+</DeepDive>

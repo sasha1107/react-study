@@ -1,1 +1,230 @@
-# Rendering Lists
+import {
+    Alert,
+    AlertIcon,
+    AlertTitle,
+    AlertDescription,
+} from '@chakra-ui/react';
+import { DeepDive } from '@/app/components/DeepDive';
+import { Highlight } from '@/app/components/Highlight';
+import { CodeBlock } from '@/app/components/CodeBlock';
+import { Pitfall } from '@/app/components/Pitfall';
+import { RedCard } from '@/app/components/RedCard';
+import { WhiteCard } from '@/app/components/WhiteCard';
+
+# 리스트를 렌더링하기
+
+데이터 모음으로부터 여러 컴포넌트를 표시하고 싶을 때가 있다.
+
+자바스크립트 배열 메소드를 사용해서 배열을 조작할 수 있다. 이 페이지에서는 `filter()`와 `map()`을 사용하여 데이터 배열을 필터링하고 컴포넌트 배열로 변환할 수 있다.
+
+## 배열에서 데이터 렌더링 `map()`
+
+댓글 목록에서 프로필 이미지 갤러리에 이르기까지 UI를 구축할 때 서로 다른 데이터를 사용하여 동일 컴포넌트의 여러 인스턴스를 표시해야 하는 경우가 많습니다.
+
+이러한 상황에서 데이터를 자바스크립트 객체, ,배열에 저장하고 `filter()`와 `map()` 와 같은 메소드를 사용하여 컴포넌트 리스트를 렌더링할 수 있다.
+
+### STEP 0: 이런 코드가 있다.
+
+<CodeBlock lang='html'>
+    {`<ul>
+  <li>Creola Katherine Johnson: mathematician</li>
+  <li>Mario José Molina-Pasquel Henríquez: chemist</li>
+  <li>Mohammad Abdus Salam: physicist</li>
+  <li>Percy Lavon Julian: chemist</li>
+  <li>Subrahmanyan Chandrasekhar: astrophysicist</li>
+</ul>`}
+</CodeBlock>
+
+### STEP 1: 데이터를 배열로 이동
+
+<CodeBlock lang='javascript'>
+    {`const people = [
+    'Creola Katherine Johnson: mathematician',
+    'Mario José Molina-Pasquel Henríquez: chemist',
+    'Mohammad Abdus Salam: physicist',
+    'Percy Lavon Julian: chemist',
+    'Subrahmanyan Chandrasekhar: astrophysicist'
+];`}
+</CodeBlock>
+
+### STEP 2: Map으로 돌린다.
+
+<CodeBlock lang='javascript'>
+    {`const listItems = people.map(person => <li>{person}</li>);`}
+</CodeBlock>
+
+### STEP 3: `<ul>`로 감싸진 `listItems`를 반환한다.
+
+<CodeBlock lang='javascript'>{`return <ul>{listItems}</ul>;`}</CodeBlock>
+
+<WhiteCard title="Keeping list items in order with `key`">
+  <Alert status='error'>
+      <AlertIcon />
+      <AlertTitle>Warning: </AlertTitle>
+      <AlertDescription>
+          Each child in a list should have a unique “key” prop.
+      </AlertDescription>
+  </Alert>
+  <br />
+  `key` prop이 없으면 콘솔에 다음과 같은 에러가 뜰 것이다.
+
+  <b>고유하게 식별하는 문자열 또는 숫자</b>를 배열 item의 key로 제공해야 한다.
+
+  <CodeBlock lang='html'>
+  {`<li key={person.id}>...</li>`}
+  </CodeBlock>
+
+  `key`는 각 컴포넌트가 대응하는 배열 item을 알려줍니다.
+
+  이는 나중에 배열이 삽입되거나 삭제되거나 정렬된다면 중요해진다.
+
+  잘 선택된(well-chosen) `key`는 리액트로 하여금 무슨일이 일어났는지 추론하고, 돔 트리를 정확하게 업데이트할 수 있도록 한다.
+
+  `key`는 map 돌릴 때 즉석으로 생성하는 것보다, data 안에 포함시켜야 한다.
+
+  <CodeBlock lang='javascript'>
+  {`export const people = [{
+    id: 0, // Used in JSX as a key
+    name: 'Creola Katherine Johnson',
+    profession: 'mathematician',
+    accomplishment: 'spaceflight calculations',
+    imageId: 'MK3eW3A'
+    }, {
+    id: 1, // Used in JSX as a key
+    name: 'Mario José Molina-Pasquel Henríquez',
+    profession: 'chemist',
+    accomplishment: 'discovery of Arctic ozone hole',
+    imageId: 'mynHUSa'
+    }, {
+    id: 2, // Used in JSX as a key
+    name: 'Mohammad Abdus Salam',
+    profession: 'physicist',
+    accomplishment: 'electromagnetism theory',
+    imageId: 'bE7W1ji'
+  }];`}
+  </CodeBlock>
+</WhiteCard>
+
+## 배열에서 데이터 필터링 `filter()`
+
+### STEP 0: 이런 데이터가 있다.
+
+<CodeBlock lang='javascript'>
+{`const people = [{
+  id: 0,
+  name: 'Creola Katherine Johnson',
+  profession: 'mathematician',
+}, {
+  id: 1,
+  name: 'Mario José Molina-Pasquel Henríquez',
+  profession: 'chemist',
+}, {
+  id: 2,
+  name: 'Mohammad Abdus Salam',
+  profession: 'physicist',
+}, {
+  name: 'Percy Lavon Julian',
+  profession: 'chemist',  
+}, {
+  name: 'Subrahmanyan Chandrasekhar',
+  profession: 'astrophysicist',
+}];`}
+</CodeBlock>
+
+여기서 직업이 `chemist`인 사람들만 화면에 출력하기를 원한다.
+
+### STEP 1: 직업이 `chemist`인 사람들만 데이터에서 뽑아와 `chemists`라는 새로운 배열을 만든다.
+
+<CodeBlock lang='javascript'>
+{`const chemists = people.filter(person =>
+  person.profession === 'chemist'
+);`}
+</CodeBlock>
+
+### STEP 2: Map으로 돌린다.
+
+
+<CodeBlock lang='javascript'>
+{`const listItems = chemists.map(person =>
+  <li>
+     <img
+       src={getImageUrl(person)}
+       alt={person.name}
+     />
+     <p>
+       <b>{person.name}:</b>
+       {' ' + person.profession + ' '}
+       known for {person.accomplishment}
+     </p>
+  </li>
+);`}
+</CodeBlock>
+
+### STEP 3: `<ul>`로 감싸진 `listItems`를 반환한다.
+
+<CodeBlock lang='javascript'>{`return <ul>{listItems}</ul>;`}</CodeBlock>
+
+<Pitfall title="함정">
+  - 화살표 함수는 `=>` 바로 뒤에 표현식을 암시적으로 반환하므로 `return` 문이 필요 없음.
+  <CodeBlock lang='javascript'>
+  {`const listItems = chemists.map(person =>
+      <li>...</li> // Implicit return!
+  );`}
+  </CodeBlock>
+  
+  - 그러나 뒤에 중괄호가 오는 경우 명시적으로 `return`을 작성해야 한다. (두 줄 이상)
+  <CodeBlock lang='javascript'>
+  {`const listItems = chemists.map(person => { // Curly brace
+      return <li>...</li>;
+  })`}
+  </CodeBlock>
+</Pitfall>
+
+
+## `key`🔑
+
+### `key`를 어디서 구할 수 있습니까?
+
+-   데이터베이스의 데이터
+    -   너의 데이터가 데이터베이스에서 오는 경우 데이터베이스의 unique한 기본키(PK)를 사용할 수 있다.
+-   로컬에서 생성된 데이터
+    -   데이터가 로컬에서 생성되고 유지되는 경우(ex. 메모 작성 앱의 메모) 다음과 같은 incrementing counter를 사용할 수 있다.
+        -   [`crypto: randomUUID()`](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/randomUUID)
+        -   [`uuid`](https://www.npmjs.com/package/uuid)
+
+### `key` 규칙
+
+-   키는 형제 간에 unique 해야 한다.
+    -   다른 배열에서는 동일한 키를 사용해도 괜찮다.
+-   키는 변경되어서는 안된다.
+-   키를 렌더링하는 동안 생성하지 마세요.
+    -   예) `key={Math.random()}`
+    -   렌더링 간에 키가 일치하지 않아 모든 컴포넌트와 돔이 매번 다시 생성된다.
+    -   느릴 뿐만 아니라 목록 항목 내부의 사용자 입력도 잃게 된다.
+        => 데이터를 기반으로 안정적인 id를 사용할 것!
+
+### 리액트에 `key`가 필요한 이유는?
+
+key를 통해 형제 간에 항목을 고유하게 식별할 수 있습니다.
+
+재정렬로 인해 위치가 변경되더라도 `key`는 리액트로 하여금 아이템을 식별할 수 있도록 한다.
+<Pitfall title='배열의 인덱스를 key로 사용하면 안되나요?'>
+사실 `key`를 지정해주지 않으면, 리액트는 배열의 인덱스를 key로 사용한다.
+
+하지만 배열에 항목이 삽입되거나 삭제되거나 재정렬되는 경우, 항목을 렌더링하는 순서가 변경된다.
+
+그래서 배열의 인덱스를 key로 사용하면 종종 혼란스러운 버그가 발생할 수도 있다.
+
+또한 `key`는 props로 전달되지 않고, React 자체에서 힌트로만 사용된다. props로 필요하다면 별도의 props로 전달해줘야 한다.
+
+<CodeBlock lang='html'>
+{`<Profile key={id} userId={id} />`}
+</CodeBlock>
+
+</Pitfall>
+
+# 요약
+
+-   유사한 컴포넌트 집합을 생성하기 -> `map()`
+-   배열에서 아이템을 필터링 -> `filter()`
+-   React가 각 컴포넌트를 추적할 수 있도록 `key` props 필수!
