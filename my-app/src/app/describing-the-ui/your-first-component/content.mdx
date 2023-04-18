@@ -9,6 +9,8 @@ import {
     CardBody,
     Divider
 } from '@chakra-ui/react';
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import atomOneDark from 'react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark.js';
 
 export const ColorBox = ({children, color}) => (
     <div
@@ -53,13 +55,15 @@ export const ColorBox = ({children, color}) => (
 
 ## Nesting and organizing components
 
-```
-<Gallery>
+
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`<Gallery>
     <Profile />
     <Profile />
     <Profile />
-</Gallery>
-```
+</Gallery>}`}
+</SyntaxHighlighter>
+
 
 `Gallery`가 부모 컴포넌트, `Profile`이 자식 컴포넌트
 
@@ -72,15 +76,15 @@ export const ColorBox = ({children, color}) => (
 
 컴포넌트는 다른 컴포넌트를 렌더링할 수 있지만, 해당 정의를 중첩해서는 안 된다.
 
-```
-export default function Gallery() {
+<SyntaxHighlighter language="javascript" style={atomOneDark}>
+{`export default function Gallery() {
   // 🔴 Never define a component inside another component!
     function Profile() {
         // ...
     }
   // ...
-}
-```
+}`}
+</SyntaxHighlighter>
 
 -   자식 컴포넌트가 부모로부터 데이터가 필요하다면, 중첩 정의대신 `props`로 전달한다.
 </ColorBox>
