@@ -70,7 +70,9 @@ a:visited {
     text-decoration: underline;
     cursor: auto;
 }
-
+a.chakra-link {
+    text-decoration: none;
+}
 blockquote {
     display: block;
     margin-top: 1em;

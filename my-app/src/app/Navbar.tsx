@@ -9,7 +9,7 @@ import {
     AccordionItem,
     Box,
     Text,
-    Link
+    Link,
 } from '@chakra-ui/react';
 
 export default function Navbar() {
@@ -27,21 +27,78 @@ export default function Navbar() {
                         <AccordionIcon />
                     </AccordionButton>
                     <AccordionPanel pb={4}>
-                        <Link href='../../describing-the-ui/your-first-component'>Your First Component</Link>
-                        <br/>
-                        <Link href='../../describing-the-ui/importing-and-exporting-components'>Importing and Exporting Components</Link>
-                        <br/>
-                        <Link href='../../describing-the-ui/writing-markup-with-jsx'>Writing Markup with JSX</Link>
-                        <br/>
-                        <Link href='../../describing-the-ui/javascript-in-jsx-with-curly-braces'>JavaScript in JSX with Curly Braces</Link>
-                        <br/>
-                        <Link href='../../describing-the-ui/passing-props-to-a-component'>Passing Props to a Component</Link>
-                        <br/>
-                        <Link href='../../describing-the-ui/conditional-rendering'>Conditional Rendering</Link>
-                        <br/>
-                        <Link href='../../describing-the-ui/rendering-lists'>Rendering Lists</Link>
-                        <br/>
-                        <Link href='../../describing-the-ui/keeping-components-pure'>Keeping Components Pure</Link>
+                        <Link href='../../describing-the-ui/your-first-component'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                컴포넌트 생성
+                            </Text>
+                        </Link>
+                        <Link href='../../describing-the-ui/importing-and-exporting-components'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                컴포넌트 import, export
+                            </Text>
+                        </Link>
+                        <Link href='../../describing-the-ui/writing-markup-with-jsx'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                JSX로 마크업
+                            </Text>
+                        </Link>
+                        <Link href='../../describing-the-ui/javascript-in-jsx-with-curly-braces'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                중괄호로 자바스크립트 사용
+                            </Text>
+                        </Link>
+                        <Link href='../../describing-the-ui/passing-props-to-a-component'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                컴포넌트에 props 넘기기
+                            </Text>
+                        </Link>
+                        <Link href='../../describing-the-ui/conditional-rendering'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                조건부 렌더링
+                            </Text>
+                        </Link>
+                        <Link href='../../describing-the-ui/rendering-lists'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                Rendering Lists
+                            </Text>
+                        </Link>
+                        <Link href='../../describing-the-ui/keeping-components-pure'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                Keeping Components Pure
+                            </Text>
+                        </Link>
                     </AccordionPanel>
                 </AccordionItem>
 
