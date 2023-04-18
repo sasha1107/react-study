@@ -103,9 +103,14 @@ code {
     padding: 0.2em 0.4em;
     font-size: 0.9em;
 }
+
 pre code{
     background-color: #16181d;
     color: #ffffff;
+}
+
+pre code[class*="language"] {
+    background: none;
 }
 
 th,
@@ -119,3 +124,7 @@ th {
     background-color: rgba(175, 184, 193, 0.2);
 }
 
+hr {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
