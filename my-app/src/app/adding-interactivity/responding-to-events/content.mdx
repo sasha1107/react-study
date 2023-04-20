@@ -4,5 +4,205 @@ import { CodeBlock } from '@/app/components/CodeBlock';
 import { Pitfall } from '@/app/components/Pitfall';
 import { RedCard } from '@/app/components/RedCard';
 import { WhiteCard } from '@/app/components/WhiteCard';
+import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
+} from '@chakra-ui/react'
 
-# Title
+# 이벤트에 응답
+
+리액틀를 사용하면 JSX에 이벤트 핸들러를 추가할 수 있다.
+이벤트 핸들러는 클릭, 호버, 포커싱 등의 인터렉션의 응답으로 트리거되는 함수이다.
+
+
+
+## 이벤트 핸들러 추가하기
+
+이벤트 핸들러를 추가하기 위해서는 함수를 정의해야 한다. 그리고 적절한 JSX 태스에 props로 넘겨야 한다.
+
+1. `Button` 컴포넌트 안에 `handleClick` 함수를 정의한다.
+
+2. `handleClick` 함수의 로직을 작성한다. (`handleClick` 함수는 `alert` 함수를 호출한다.)
+
+3. `handleClick` 함수를 `<button>` 태그에 `onClick` prop으로 넘긴다.
+
+<CodeBlock lang="javascript">
+{`export default function Button() {
+  function handleClick() {
+    alert('You clicked me!');
+  }
+
+  return (
+    <button onClick={handleClick}>
+      Click me
+    </button>
+  );
+}`}
+</CodeBlock>
+
+<WhiteCard title="이벤트 핸들러">
+여기서 `handleClick` 함수는 이벤트 핸들러이다.
+
+이벤트 핸들러 함수는
+- 주로 컴포넌트 안에서 정의된다.
+- `handle`로 시작하고, 뒤에 이벤트의 이름이 따라오는 형태의 이름 컨벤션을 가진다.
+    - ex) `onClick={handleClick}`, `onMouseEnter={handleMouseEnter}`
+<WhiteCard>
+
+### 인라인으로 이벤트 핸들러 정의
+
+<CodeBlock lang="javascript">
+{`<button onClick={function handleClick() {
+  alert('You clicked me!');
+}}>`}
+</CodeBlock>
+
+- 함수의 내용이 짧을 때 편리하다.
+
+### 화살표 함수로 이벤트 핸들러 정의
+
+<CodeBlock lang="javascript">
+{`<button onClick={() => {
+  alert('You clicked me!');
+}}>`}
+</CodeBlock>
+
+<Pitfall title="이벤트 핸들러 전달 시 주의할 점">
+이벤트 핸들러를 전달할 때는 함수를 호출하지 않는다. 
+이벤트 핸들러에 전달되는 함수는 호출되는 것이 아니라 전달되어야 한다.
+
+<TableContainer>
+  <Table variant='simple'>
+    <Thead>
+      <Tr>
+        <Th>함수를 전달(✅)</Th>
+        <Th>함수를 호출(❌)</Th>
+      </Tr>
+    </Thead>
+    <Tbody>
+      <Tr>
+        <Td>
+            <CodeBlock lang="javascript">
+                {`<button onClick={handleClick}>`}
+            </CodeBlock>
+        </Td>
+        <Td>
+            <CodeBlock lang="javascript">
+                {`<button onClick={handleClick()}>`}
+            </CodeBlock>
+        </Td>
+      </Tr>
+      <Tr>
+        <Td>
+            사용자가 버튼을 클릭할 때만 함수를 호출함
+        </Td>
+        <Td>
+            렌더링 중에 즉시 `handleClick` 함수를 호출함
+            <br/>
+            JSX 내부에 있는 `{`자바스크립트`}` 코드는 바로 실행되기 때문이다. 
+        </Td>
+      </Tr>
+      <Tr>
+        <Td>
+            인라인 함수로 사용
+            <CodeBlock lang="javascript">
+                {`<button onClick={() => alert('You clicked me!')}>`}
+            </CodeBlock>
+        </Td>
+        <Td>
+            <CodeBlock lang="javascript">
+                {`<button onClick={alert('You clicked me!')}>`}
+            </CodeBlock>
+        </Td>
+      </Tr>
+  </Table>
+</TableContainer>
+</Pitfall>
+
+## 이벤트 핸들러에서 props 읽기
+
+이밴트 핸들러는 컴포넌트 안에서 정의되기 때문에, 컴포넌트의 `props`에 접근할 수 있다.
+
+다음은 `AlertButton` 컴포넌트의 `props`를 이벤트 핸들러에서 읽는 예제이다.
+
+<CodeBlock lang="javascript">
+{`function AlertButton({ message, children }) {
+  return (
+    <button onClick={() => alert(message)}>
+      {children}
+    </button>
+  );
+}
+
+export default function Toolbar() {
+  return (
+    <div>
+      <AlertButton message="Playing!">
+        Play Movie
+      </AlertButton>
+      <AlertButton message="Uploading!">
+        Upload Image
+      </AlertButton>
+    </div>
+  );
+}`}
+</CodeBlock>
+
+이것은 두 개의 버튼에서 각각 다른 메시지를 보여줄 수 있도록 한다.
+
+## 이벤트 핸들러를 props로 전달하기
+
+
+부모 컴포넌트로부터 자식 컴포넌트의 이벤트 핸들러를 구체화하길 원할 수 있다.
+
+예를 들어, `Button` 컴포넌트를 사용할 때, 상황에 따라 다른 함수를 전달하고 싶을 것이다. ex) 영화를 재생하는 버튼, 이미지를 업로드하는 버튼
+
+이것을 하기 위해서, 컴포넌트는 부모로부터 받은 prop을 이벤트 핸들러로 전달한다.
+
+<CodeBlock lang="javascript">
+{`function Button({ onClick, children }) {
+  return (
+    <button onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
+function PlayButton({ movieName }) {
+  function handlePlayClick() {
+    alert(`Playing ${movieName}!`);
+  }
+
+  return (
+    // PlayButton 컴포넌트는 handlePlayClick 함수를 Button 컴포넌트에게 onClick prop으로 이벤트 핸들러로 전달한다.
+    <Button onClick={handlePlayClick}>
+      Play "{movieName}"
+    </Button>
+  );
+}
+
+function UploadButton() {
+  return (
+    <Button onClick={() => alert('Uploading!')}>
+      Upload Image
+    </Button>
+  );
+}
+
+// Toolbar 컴포넌트는 PlayButton과 UploadButton을 렌더링한다.
+export default function Toolbar() {
+  return (
+    <div>
+      <PlayButton movieName="Kiki's Delivery Service" />
+      <UploadButton />
+    </div>
+  );
+}
+`}
+</CodeBlock>
+
