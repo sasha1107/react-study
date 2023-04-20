@@ -110,11 +110,69 @@ export default function Navbar() {
                         <AccordionIcon />
                     </AccordionButton>
                     <AccordionPanel pb={4}>
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-                        sed do eiusmod tempor incididunt ut labore et dolore
-                        magna aliqua. Ut enim ad minim veniam, quis nostrud
-                        exercitation ullamco laboris nisi ut aliquip ex ea
-                        commodo consequat.
+                        <Link href='../../adding-interactivity/responding-to-events'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                이벤트에 반응하기
+                            </Text>
+                        </Link>
+                        <Link href='../../adding-interactivity/state-a-components-memory'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                state: 컴포넌트의 memory
+                            </Text>
+                        </Link>
+                        <Link href='../../adding-interactivity/render-and-commit'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                렌더와 커밋
+                            </Text>
+                        </Link>
+                        <Link href='../../adding-interactivity/state-as-a-snapshot'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                스냅샷으로서의 state
+                            </Text>
+                        </Link>
+                        <Link href='../../adding-interactivity/queueing-a-series-of-state-updates'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                일련의 state 업데이트 대기열
+                            </Text>
+                        </Link>
+                        <Link href='../../adding-interactivity/updating-objects-in-state'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                객체 state 업데이트
+                            </Text>
+                        </Link>
+                        <Link href='../../adding-interactivity/updating-arrays-in-state'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                배열 state 업데이트
+                            </Text>
+                        </Link>
                     </AccordionPanel>
                 </AccordionItem>
 
