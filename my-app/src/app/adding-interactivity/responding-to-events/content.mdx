@@ -52,7 +52,7 @@ import {
 - 주로 컴포넌트 안에서 정의된다.
 - `handle`로 시작하고, 뒤에 이벤트의 이름이 따라오는 형태의 이름 컨벤션을 가진다.
     - ex) `onClick={handleClick}`, `onMouseEnter={handleMouseEnter}`
-<WhiteCard>
+</WhiteCard>
 
 ### 인라인으로 이벤트 핸들러 정의
 
@@ -120,6 +120,7 @@ import {
             </CodeBlock>
         </Td>
       </Tr>
+      </Tbody>
   </Table>
 </TableContainer>
 </Pitfall>
@@ -175,7 +176,7 @@ export default function Toolbar() {
 
 function PlayButton({ movieName }) {
   function handlePlayClick() {
-    alert(`Playing ${movieName}!`);
+    alert('Playing ' + movieName + '!');
   }
 
   return (
