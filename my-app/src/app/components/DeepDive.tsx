@@ -7,14 +7,14 @@ import {
 
 interface Props {
     children: any;
-    title: string
+    title?: string
 }
 export const DeepDive = ({children, title}: Props) => (
     <Card bg="#F3F4FD" mt={2} mb={2} border='1px' borderColor='gray.200'>
     <CardBody>
         <Box mb={2}>
         <Text fontSize="lg" as="b" color="#575FB7">
-            📖 {title}
+            📖 {title ? title : 'Deep Dive'}
         </Text>
         </Box>
         {children}

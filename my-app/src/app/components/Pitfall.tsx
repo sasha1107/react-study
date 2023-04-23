@@ -8,7 +8,7 @@ import {
 
 interface Props {
     children: any;
-    title: string
+    title?: string
 }
 
 export const Pitfall = ({children, title}: Props) => (
@@ -16,7 +16,7 @@ export const Pitfall = ({children, title}: Props) => (
     <CardBody>
         <Box mb={2}>
         <Text fontSize="lg" as="b" color="tomato">
-            🤔 {title}
+            🤔 {title ? title : '함정'}
         </Text>
         </Box>
         {children}
