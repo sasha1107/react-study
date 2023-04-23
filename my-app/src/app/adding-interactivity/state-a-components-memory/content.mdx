@@ -5,4 +5,97 @@ import { Pitfall } from '@/app/components/Pitfall';
 import { RedCard } from '@/app/components/RedCard';
 import { WhiteCard } from '@/app/components/WhiteCard';
 
-# Title
+# state: 컴포넌트의 메모리
+
+컴포넌트는 종종 상호작용의 결과로 화면에 표시되는 내용을 변경해야 한다.
+
+예)
+
+- form 에 타이핑을 하면 -> input field에 이가 업데이트 되어야 한다.
+- 캐러셀에서 'next' 버튼을 누르면 다른 이미지로 변경되어야 한다.
+- 'buy'를 클릭하면 상품이 장바구니에 담겨야 한다.
+
+컴포넌트는 현재 입력 값, 현재 이미지, 쇼핑 카드 등을 **기억** 해야 한다.
+
+리액트에서는 이러한 컴포넌트의 memory를 **state**라고 한다.
+
+## 일반 변수가 충분하지 않은 경우
+
+다음은 조각상 이미지를 렌더링하는 컴포넌트이다.
+
+"Next" 버튼을 클릭하면 인덱스가 1이 증가되어 다음 조각상 이미지로 교체되길 원한다.
+
+하지만 이는 작동하지 않는다.
+
+<CodeBlock lang='javascript'>
+{`import { sculptureList } from './data.js';
+
+export default function Gallery() {
+  let index = 0;
+
+  function handleClick() {
+    index = index + 1;
+  }
+
+  let sculpture = sculptureList[index];
+  return (
+    <>
+      <button onClick={handleClick}>
+        Next
+      </button>
+      <h2>
+        <i>{sculpture.name} </i> 
+        by {sculpture.artist}
+      </h2>
+      <h3>  
+        ({index + 1} of {sculptureList.length})
+      </h3>
+      <img 
+        src={sculpture.url} 
+        alt={sculpture.alt}
+      />
+      <p>
+        {sculpture.description}
+      </p>
+    </>
+  );
+}`}
+</CodeBlock>
+
+`handleClick` 이벤트 핸들러는 로컬 변수(`index`)를 업데이트하고 있다.
+
+<br/>
+하지만 다음 두 가지 이유로 인해, 변경이 안되고 있다.
+<br/>
+
+1. **지역 변수는 렌더링 간에 유지되지 않는다.**
+
+    React는 이 구성 요소를 다시 렌더링할 때 처음부터 렌더링합니다. 로컬 변수에 대한 변경 사항은 고려하지 않습니다.
+
+2. **지역 변수**를 변경해도 렌더링이 트리거되지 않는다. 
+
+    리액트는 새로운 데이터로 컴포넌트를 다시 렌더링해야 한다는 사실을 인식하지 못한다.
+
+<br/>
+
+새 데이터로 컴포넌트를 업데이트하려면, 다음 두 가지가 필요하다.
+<br/>
+1. 렌더링 간에 데이터를 유지한다.(retain)
+2. React를 트리거하여 새 데이터로 구성 요소를 렌더링합니다(리렌더링).
+
+<br/>
+`useState` 훅은 다음 두가지를 제공해줍니다.
+
+1. state variable
+    - 렌더링 간에 데이터를 유지하기 위한 상태 변수
+2. state setter function
+    - 변수를 업데이트하고 구성 요소를 다시 렌더링하기 위해 React를 트리거
+
+- - -
+## 상태 변수 추가
+
+상태 변수를 추가하려면 `useState`를 import 해와야 한다.
+
+<CodeBlock lang='javascript'>
+{`import { useState } from 'react'`}
+</CodeBlock>
