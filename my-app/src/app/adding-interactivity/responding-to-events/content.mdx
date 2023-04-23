@@ -207,3 +207,229 @@ export default function Toolbar() {
 `}
 </CodeBlock>
 
+## 이벤트 핸들러 props 네이밍 컨벤션
+
+`<button>` 같은 내장 태그는 `onClick` 같은 기본 브라우저 이벤트 이름만 가질 수 있다. 
+
+하지만 나만의 컴포넌트를 만들 때에는 이벤트 핸들러 props의 이름을 원하는 대로 지정할 수 있다.
+
+> 컨벤션에 따르면 이밴트 핸들러 props의 이름은 `on`으로 시작하고 그 뒤에는 대문자가 와야 한다.
+
+- 예시
+  <CodeBlock lang="html">
+  {`<Button onSmash={() => alert('Playing!')}>`}
+  </CodeBlock>
+
+
+## 이벤트 전파
+
+이밴트 핸들러는 컴포넌트의 자식들로부터 발생하는 이밴트도 잡아낸다. 우리는 이것을 이벤트가 트리 위에서 "bubbles" 되거나 "propagates" 된다고 말한다.
+
+: 이벤트가 발생한 곳에서 시작해서 트리 위로 올라간다. 
+
+### ❓ 예제
+
+버튼(`<button>`) 태그에도 이벤트 핸들러가 달려 있고, 그 상위 요소인 `<div>` 태그에도 이벤트 핸들러가 달려 있다.
+
+이벤트가 어떤 순서로 실행될까?
+
+<CodeBlock lang="javascript">
+{`export default function Toolbar() {
+  return (
+    <div className="Toolbar" onClick={() => {
+      alert('You clicked on the toolbar!');
+    }}>
+      <button onClick={() => alert('Playing!')}>
+        Play Movie
+      </button>
+      <button onClick={() => alert('Uploading!')}>
+        Upload Image
+      </button>
+    </div>
+  );
+}`}
+</CodeBlock>
+
+
+<WhiteCard title="정답">
+
+- Play Movie 버튼 클릭
+  - alert('Play Movie') => alert('You clicked on the toolbar!')
+- Upload Image 버튼 클릭
+  - alert('Upload Image') => alert('You clicked on the toolbar!')
+</WhiteCard>
+
+<Pitfall title="함정">
+`onScroll` 이벤트를 제외한 모든 이벤트는, 리액트에서 전파(propagate)된다.
+
+`onScroll` 이벤트는 이벤트 핸들러가 달린 JSX 태그에서만 작동한다.
+
+</Pitfall>
+
+## Stop propagation
+
+이벤트 핸들러는 이벤트 객체를 유일한 인자로 받는다. 컨벤션에 따르면 이벤트 객체는 `e`라고 표기한다. 
+
+이 객체를 사용해서 이벤트에 대한 정보를 읽을 수 있다.
+
+이 이벤트 객체는 이벤트 전파를 막는데도 사용할 수 있다. 만약 이벤트가 부모 컴포넌트에게 전파되는 것을 막고 싶다면, `e.stopPropagation()`을 호출하면 된다.
+
+<CodeBlock lang="javascript">
+{`function Button({ onClick, children }) {
+  return (
+    <button onClick={e => {
+      e.stopPropagation();
+      onClick();
+    }}>
+      {children}
+    </button>
+  );
+}
+
+export default function Toolbar() {
+  return (
+    <div className="Toolbar" onClick={() => {
+      alert('You clicked on the toolbar!');
+    }}>
+      <Button onClick={() => alert('Playing!')}>
+        Play Movie
+      </Button>
+      <Button onClick={() => alert('Uploading!')}>
+        Upload Image
+      </Button>
+    </div>
+  );
+}`}
+</CodeBlock>
+
+
+When you click on a button:
+
+버튼을 클릭하면:
+
+1. 리액트는 `<button>`의 `onClick` 핸들러를 호출한다.
+
+2. 그 핸들러는 Button 컴포넌트에서 정의되어 있다. 그 핸들러는 다음을 수행한다.
+
+- `e.stopPropagation()`을 호출하여 이벤트가 더 이상 버블링되지 않도록 막는다.
+- `Toolbar` 컴포넌트로부터 전달된 `onClick` 함수를 호출한다.
+
+3. 컴포넌트에 정의된 이 함수는, 버튼 자체의 alert를 보여준다.
+
+4. 이벤트의 전파가 중단되었으므로, 부모 `<div>`의 `onClick` 핸들러는 실행되지 않는다.
+
+
+`e.stopPropagation()`의 결과로 클릭하면 버튼이 하나의 경고(`<button>`에서)만 표시된다.
+
+=> 두 개의 경고(툴바 `<div>`를 클릭했을 때, `<button>`을 클릭했을 때 뜨는 alert)가 뜨는 것보다 적합하다.
+
+=> 이벤트 전파를 중지하는 것이 이 UI에 적합하다.
+
+
+<DeepDive title='캡쳐 단계 이벤트'>
+드물게, 이벤트 전파가 중지되었어도 자식 요소의 모든 이벤트를 캐치하고 싶을 수도 있다.
+
+예를 들어, 이벤트 전파 로직과 관계없이 모든 클릭을 분석에 기록하고 싶을 수 있다.
+
+이런 경우, 이벤트 이름 끝에 `Capture`를 추가하면 된다.
+
+<CodeBlock lang="html">
+{`<div onClickCapture={() => { /* this runs first */ }}>
+  <button onClick={e => e.stopPropagation()} />
+  <button onClick={e => e.stopPropagation()} />
+</div>`}
+</CodeBlock>
+
+각 이벤트는 세 단계로 전파된다.
+
+1. 아래로 이동하여(It travels down) 모든 `onClickCapture` 핸들러가 호출된다.
+2. 클릭한 요소의 `onClick` 핸들러가 호출된다.
+3. 위로 이동하여(It travels up) 모든 `onClickCapture` 핸들러가 호출된다.
+
+캡처 이벤트는 라우터 또는 분석과 같은 코드에 유용하지만 앱 코드에서는 사용하지 않을 것이다.
+</DeepDive>
+
+
+## 전파의 대안으로 이벤트 핸들러 전달
+
+<CodeBlock lang="javascript">
+{`function Button({ onClick, children }) {
+  return (
+    <button onClick={e => {
+      e.stopPropagation();
+      onClick();
+    }}>
+      {children}
+    </button>
+  );
+}`}
+</CodeBlock>
+상위 `onClick` 이벤트 핸들러를 호출하기 전에 이 핸들러에 더 많은 코드를 추가할 수도 있다.
+
+이 패턴은 전파에 대한 대안을 제공한다.
+
+하위 컴포넌트가 가 이벤트를 처리하는 동시에 상위 구성 요소가 일부 추가 동작을 지정할 수 있다.
+
+전파와 달리 자동이 아남 그러나 이 패턴의 이점은 일부 이벤트의 결과로 실행되는 전체 코드 체인을 명확하게 따를 수 있다는 것입니다.
+
+전파에 의존하고 실행하는 핸들러와 그 이유를 추적하기 어려운 경우 대신 이 접근 방식을 시도하십시오.
+
+
+## 이벤트의 기본 동작 방지(`e.preventDefault()`)
+
+일부 브라우저 이벤트에는 기본 동작이 있다.
+
+예를 들어 `<form>`의 submit 이벤트는 내부 버튼을 클릭할 때 발생하며 기본적으로 전체 페이지를 다시 로드한다.
+
+이벤트 객체에서 `e.preventDefault()`를 호출하여 이를 방지할 수 있다.
+
+<CodeBlock lang='javascript'>
+{`export default function Signup() {
+  return (
+    <form onSubmit={e => {
+      e.preventDefault();
+      alert('Submitting!');
+    }}>
+      <input />
+      <button>Send</button>
+    </form>
+  );
+}`}
+</CodeBlock>
+
+<WhiteCard title='혼동 주의'>
+- `e.stopPropagation()`
+  - 위의 태그에 연결된 이벤트 핸들러의 실행을 중지합니다.
+- `e.preventDefault()`  
+  - 몇 가지 이벤트에 대한 기본 브라우저 동작을 방지합니다.
+</WhiteCard>
+
+## 이벤트 핸들러에 side effect가 있을 수 있습니까?
+
+완전!
+
+이벤트 핸들러는 side effect에 가장 적합한 장소이다.
+
+렌더링 함수와 달리 이벤트 핸들러는 순수 할 필요가 없으므로 무언가를 변경하는 데 가장 좋은 장소이다.
+
+- 예를 들어 입력에 대한 응답으로 입력 값을 변경하거나 버튼 누름에 대한 응답으로 목록을 변경하는 등
+
+그러나 일부 정보를 변경하려면 먼저 정보를 저장할 방법이 필요하다.
+
+React에서는 구성 요소의 메모리인 **state**를 사용하여 이 작업을 수행한다.
+
+- - -
+
+# 요약
+
+- `<button>`과 같은 요소에 함수를 props로 전달하여 이벤트를 처리할 수 있다.
+- 이벤트 핸들러는 반드시 호출되는 것이 아니라 전달되어야 한다.
+  - `onClick={handleClick}` ✅
+  - `onClick={handleClick()}`❎
+- 이벤트 핸들러 함수는 인라인으로 정의하거나 별도로 정의할 수 있다.
+- 이벤트 핸들러는 컴포넌트 내부에 정의되어 있으므로, props로 접근할 수 있다
+- 부모에서 이벤트 핸들러를 선언하고 자식에게 props로 전달할 수 있다.
+- 이벤트 핸들로 props의 이름을 원하는 대로 정의할 수 있다.
+- 이벤트는 위쪽으로 전파된다. 이를 막으려면 `e.stopPropagation()` 를 사용해라.
+- 이벤트는 원치 않는 기본 브라우저 동작이 있을 수 있다. 이를 막으려면 `e.preventDefault()`를 사용해라.
+- 하위 핸들러에서 이벤트 핸들러 prop을 명시적으로 호출하는 것은 전파에 대한 좋은 대안이다.
