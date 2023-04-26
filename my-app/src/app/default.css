@@ -5,6 +5,7 @@
 
 body {
     margin: 0;
+    line-height: 1.6;
 }
 
 h1 {
@@ -82,7 +83,7 @@ blockquote {
     padding-left: 1em;
     border-left: 4px solid black;
 }
-ul {
+ul, ol {
     margin-top: 1em;
     margin-bottom: 1em;
     margin-left: 0;
