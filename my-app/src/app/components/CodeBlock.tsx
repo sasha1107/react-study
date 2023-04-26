@@ -3,11 +3,11 @@ import atomOneDark from 'react-syntax-highlighter/dist/esm/styles/hljs/atom-one-
 
 interface Props {
     children: any;
-    lang: string;
+    lang?: string;
 }
 
 export const CodeBlock = ({ children, lang }: Props) => (
-    <SyntaxHighlighter language={lang} style={atomOneDark}>
+    <SyntaxHighlighter language={lang ? lang : 'javascript'} style={atomOneDark}>
         {children}
     </SyntaxHighlighter>
 );
