@@ -1,0 +1,77 @@
+import { DeepDive } from '@app/components/DeepDive';
+import { Highlight } from '@app/components/Highlight';
+import { CodeBlock } from '@app/components/CodeBlock';
+import { Pitfall } from '@app/components/Pitfall';
+import { RedCard } from '@app/components/RedCard';
+import { WhiteCard } from '@app/components/WhiteCard';
+
+# useWindowSize
+
+컴포넌트 내에서 window.innerWidth로 받아오면 처음 렌더링할 때의 가로 길이는 받아올 수 있었는데, 새로 고침을 하지 않고 화면 사이즈가 변경되었을 때는 동적으로 브라우저의 가로 길이를 받아올 수 없다.
+
+브라우저 화면 사이즈가 변경될 때마다 그 값을 리턴하고 리렌더링하는 리액트 커스텀 훅을 사용
+
+> ### useEffect
+useEffect 를 사용하여 이벤트 리스너를 부착하고, window size가 변경될 때 state를 변경해준다.
+
+> ### removeEventListener
+removeEventListener를 하지 않을 경우 이벤트가 붙어있는 컴포넌트가 unmount되어도 addEventListener가 남아있기 때문에 sideEffect(부작용)이 일어날 수 있다.
+따라서 useEffect가 실행될 때마다 이벤트 리스너가 부착되고, 불필요한 메모리를 많이 잡아먹을 수 있기 때문에 removeEventListener를 해준다.
+
+- - -
+
+# useWindowSize.ts
+<CodeBlock lang='javascript'>
+{`import { useState, useEffect } from 'react';
+
+interface Size {
+    width: number | undefined;
+    height: number | undefined;
+}
+
+function useWindowSize(): Size {
+    // 초기 state 값은 undefined로 세팅한다
+    const [windowSize, setWindowSize] = useState<Size>({
+        width: undefined,
+        height: undefined,
+    });
+    useEffect(() => {
+        function handleResize() {
+            // 현재 브라우저의 가로, 세로 길이로 셋팅
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight,
+            });
+        }
+        // resize 이벤트가 발생할 때 handleResize 함수가 실행되도록 한다.
+        window.addEventListener('resize', handleResize);
+
+        // 초기값을 설정할 수 있도록 handleResize 함수를 한 번 실행시킨다.
+        handleResize();
+
+        // 이벤트 리스너를 제거하여 이벤트 리스너가 리사이즈될 때마다 계속해서 생겨나지 않도록 처리한다. (clean up)
+        return () => window.removeEventListener('resize', handleResize);
+    }, []); // 컴포넌트가 처음 마운트 될때와 언마운트 될 때 실행
+
+    return windowSize;
+}
+
+export default useWindowSize;
+`}
+</CodeBlock>
+- - - 
+
+# 사용
+<CodeBlock lang='javascript'>
+{`import useWindowSize from './useWindowSize'
+
+function App () {
+    const { width, height } = useWindowSize();
+
+    return (
+        <div>
+            {size.width}px / {size.height}px
+        </div>
+    )
+}`}
+</CodeBlock>

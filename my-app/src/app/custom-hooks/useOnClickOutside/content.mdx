@@ -1,0 +1,81 @@
+import { DeepDive } from '@app/components/DeepDive';
+import { Highlight } from '@app/components/Highlight';
+import { CodeBlock } from '@app/components/CodeBlock';
+import { Pitfall } from '@app/components/Pitfall';
+import { RedCard } from '@app/components/RedCard';
+import { WhiteCard } from '@app/components/WhiteCard';
+
+# useOnClickOutside
+
+이 후크를 사용하면 지정된 요소 외부의 클릭을 감지할 수 있습니다. 아래 예제에서는 모달 외부의 요소를 클릭할 때 모달을 닫는 데 사용합니다. 
+
+이 논리를 후크로 추상화하면 이러한 종류의 기능(드롭다운 메뉴, 도구 설명 등)이 필요한 모든 구성 요소에서 쉽게 사용할 수 있습니다.
+
+- - -
+
+# useOnClickOutside.js
+
+<CodeBlock lang='javascript'>
+{`import { useEffect } from 'react';
+
+function useOnClickOutside(ref, handler) {
+    useEffect(
+        () => {
+            const listener = (event) => {
+                // ref의 요소 또는 하위 요소를 클릭하면 아무 작업도 수행하지 않음.
+                if (!ref.current || ref.current.contains(event.target)) {
+                    return;
+                }
+                handler(event);
+            };
+
+            // 이벤트 리스너 부착
+            document.addEventListener('mousedown', listener);
+            document.addEventListener('touchstart', listener);
+
+            // useEffect가 실행될 때마다 이벤트 리스너가 부착되고, 불필요한 메모리를 많이 잡아먹을 수 있기 때문에 removeEventListener를 해준다.
+            return () => {
+                document.removeEventListener('mousedown', listener);
+                document.removeEventListener('touchstart', listener);
+            };
+        },
+        // Add ref and handler to effect dependencies
+        // It's worth noting that because passed in handler is a new ...
+        // ... function on every render that will cause this effect ...
+        // ... callback/cleanup to run every render. It's not a big deal ...
+        // ... but to optimize you can wrap handler in useCallback before ...
+        // ... passing it into this hook.
+        [ref, handler]
+    );
+}
+export default useOnClickOutside;`}
+</CodeBlock>
+
+- - -
+
+# 사용
+
+<CodeBlock lang='javascript'>
+{`import useOnClickOutside from "./useOnClickOutside"
+
+// Usage
+function App() {
+    // Create a ref that we add to the element for which we want to detect outside clicks
+    const ref = useRef();
+    // State for our modal
+    const [isModalOpen, setModalOpen] = useState(false);
+    // Call hook passing in the ref and a function to call on outside click
+    useOnClickOutside(ref, () => setModalOpen(false));
+    return (
+        <div>
+            {isModalOpen ? (
+                <div ref={ref}>
+                    👋 Hey, I'm a modal. Click anywhere outside of me to close.
+                </div>
+            ) : (
+                <button onClick={() => setModalOpen(true)}>Open Modal</button>
+            )}
+        </div>
+    );
+}`}
+</CodeBlock>

@@ -14,7 +14,7 @@ import {
 
 export default function Navbar() {
     return (
-        <div className='float-left min-h-screen w-60 p-2 border-r border[#e2e8f0]'>
+        <div className='float-left min-h-screen w-60 p-2 border-r border[../../custom-hooks/e2e8f0]'>
             <Text fontSize='xl' className='p-1'>
                 Learn React
             </Text>
@@ -205,6 +205,98 @@ export default function Navbar() {
                         magna aliqua. Ut enim ad minim veniam, quis nostrud
                         exercitation ullamco laboris nisi ut aliquip ex ea
                         commodo consequat.
+                    </AccordionPanel>
+                </AccordionItem>
+
+                <AccordionItem>
+                    <AccordionButton>
+                        <Box as='span' flex='1' textAlign='left'>
+                            Custom Hooks
+                        </Box>
+                        <AccordionIcon />
+                    </AccordionButton>
+                    <AccordionPanel pb={4}>
+                        <Link href='../../custom-hooks/useWindowSize'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                useWindowSize
+                            </Text>
+                        </Link>
+                        <Link href='../../custom-hooks/useToggle'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                useToggle
+                            </Text>
+                        </Link>
+                        <Link href='../../custom-hooks/useLockBodyScroll'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                useLockBodyScroll
+                            </Text>
+                        </Link>
+                        <Link href='../../custom-hooks/useKeyPress'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                useKeyPress
+                            </Text>
+                        </Link>
+                        <Link href='../../custom-hooks/useOnClickOutside'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                useOnClickOutside
+                            </Text>
+                        </Link>
+                        <Link href='../../custom-hooks/useHover'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                useHover
+                            </Text>
+                        </Link>
+                        <Link href='../../custom-hooks/useAxios'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                useAxios
+                            </Text>
+                        </Link>
+                        <Link href='../../custom-hooks/useLocalStorage'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                useLocalStorage
+                            </Text>
+                        </Link>
+                        <Link href='../../custom-hooks/useTitle'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                useTitle
+                            </Text>
+                        </Link>
                     </AccordionPanel>
                 </AccordionItem>
             </Accordion>

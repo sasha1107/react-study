@@ -1,0 +1,81 @@
+import { DeepDive } from '@app/components/DeepDive';
+import { Highlight } from '@app/components/Highlight';
+import { CodeBlock } from '@app/components/CodeBlock';
+import { Pitfall } from '@app/components/Pitfall';
+import { RedCard } from '@app/components/RedCard';
+import { WhiteCard } from '@app/components/WhiteCard';
+
+# useLockBodyScroll
+특정 구성 요소가 페이지 위에 절대적으로 배치되어 있는 동안 사용자가 페이지 본문을 스크롤할 수 없도록 하고 싶을 때가 있습니다(모달 또는 전체 화면 모바일 메뉴 생각).
+특히 모달 내에서 영역을 스크롤하려는 경우 모달 아래에서 배경 콘텐츠 스크롤을 보는 것은 혼란스러울 수 있습니다. 글쎄, 이 후크는 그것을 해결합니다! 구성 요소에서 useLockBodyScroll 후크를 호출하기만 하면 해당 구성 요소가 마운트 해제될 때까지 본문 스크롤이 잠깁니다.
+
+- - -
+
+# useLockBodyScroll.ts
+
+<CodeBlock lang='javascript'>
+{`import { useLayoutEffect } from 'react';
+
+function useLockBodyScroll(): void {
+    // useLaoutEffect callback return type is "() => void" type
+    useLayoutEffect((): (() => void) => {
+        // 기존 body의 css overflow 속성값을 저장
+        const originalStyle: string = window.getComputedStyle(
+            document.body
+        ).overflow;
+
+        // 마운트되었을 때 스크롤 막기 overflow: hidden;
+        document.body.style.overflow = 'hidden';
+
+        // 컴포넌트가 언마운트 되면 다시 스크롤이 가능하도록 처리
+        return () => (document.body.style.overflow = originalStyle);
+    }, []); // 컴포넌트가 처음 마운트 될때와 언마운트 될 때 실행
+}
+export default useLockBodyScroll;`}
+</CodeBlock>
+
+- - -
+
+# 사용
+
+<CodeBlock lang='javascript'>
+{`import useLockBodyScroll from "./useLockBodyScroll"
+// Usage
+function App() {
+    // State for our modal
+    const [modalOpen, setModalOpen] = useState<boolean>(false);
+    return (
+        <div>
+            <button onClick={() => setModalOpen(true)}>Show Modal</button>
+            <Content />
+            {modalOpen && (
+                <Modal
+                    title='Try scrolling'
+                    content="I bet you you can't! Muahahaha 😈"
+                    onClose={() => setModalOpen(false)}
+                />
+            )}
+        </div>
+    );
+}
+
+// Define modal props type
+type ModalProps = {
+    title: string;
+    content: string;
+    onClose: () => void;
+};
+
+function Modal({ title, content, onClose }: ModalProps) {
+    // Call hook to lock body scroll
+    useLockBodyScroll();
+    return (
+        <div className='modal-overlay' onClick={onClose}>
+            <div className='modal'>
+                <h2>{title}</h2>
+                <p>{content}</p>
+            </div>
+        </div>
+    );
+}`}
+</CodeBlock>

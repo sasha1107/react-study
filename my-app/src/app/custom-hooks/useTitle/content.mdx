@@ -1,0 +1,45 @@
+import { DeepDive } from '@app/components/DeepDive';
+import { Highlight } from '@app/components/Highlight';
+import { CodeBlock } from '@app/components/CodeBlock';
+import { Pitfall } from '@app/components/Pitfall';
+import { RedCard } from '@app/components/RedCard';
+import { WhiteCard } from '@app/components/WhiteCard';
+
+# useTitle
+- SPA 리액트에서 페이지별 타이틀 설정
+- SEO 최적화에 도움
+
+- - -
+
+# useTitle.ts
+
+<CodeBlock lang='javascript'>
+{`import { useEffect } from 'react';
+
+const useTitle = (title: string) => {
+    useEffect(() => {
+        const prevTitle = document.title;
+        document.title = title;
+
+        return () => (document.title = prevTitle);
+    }, [title]);
+};
+
+export default useTitle;`}
+</CodeBlock>
+
+- - -
+
+# 사용
+
+<CodeBlock lang='javascript'>
+{`import useTitle from './useTitle';
+
+function Login() {
+  useTitle('Login - React');
+
+  return <div>Login 페이지</div>
+}
+
+export default Login;`}
+</CodeBlock>

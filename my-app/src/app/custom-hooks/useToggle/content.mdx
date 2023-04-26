@@ -1,0 +1,48 @@
+import { DeepDive } from '@app/components/DeepDive';
+import { Highlight } from '@app/components/Highlight';
+import { CodeBlock } from '@app/components/CodeBlock';
+import { Pitfall } from '@app/components/Pitfall';
+import { RedCard } from '@app/components/RedCard';
+import { WhiteCard } from '@app/components/WhiteCard';
+
+# useToggle
+
+true 또는 false인 매개변수를 사용하고 해당 값을 반대 값으로 토글하는 것
+
+<br/>
+ex) 모달 표시 및 숨기기, 사이드 메뉴 열기/닫기와 같이 반대 작업에 어떤 작업을 수행하려는 경우에 유용합니다.
+
+- - -
+
+# useToggle.ts
+
+<CodeBlock lang='javascript'>
+{`import { useCallback, useState } from 'react';
+
+
+// 파라미터는 불리언 값이고, 기본값은 'false'이다.
+const useToggle = (initialState: boolean = false): [boolean, any] => {
+    const [state, setState] = useState<boolean>(initialState);
+    // 불필요한 리렌더링을 방지 + 특정 함수를 새로 만들지 않고 재사용하기 위해 useCallback 사용
+    const toggle = useCallback((): void => setState(state => !state), []);
+    return [state, toggle]
+}
+
+export default useToggle;`}
+</CodeBlock>
+
+- - -
+
+# 사용
+
+<CodeBlock lang='javascript'>
+{`import useToggle from "./useToggle"
+
+function App() {
+    // Call the hook which returns, current value and the toggler function
+    const [isTextChanged, setIsTextChanged] = useToggle();
+    return (
+        <button onClick={setIsTextChanged}>{isTextChanged ? 'Toggled' : 'Click to Toggle'}</button>
+    );
+}`}
+</CodeBlock>
