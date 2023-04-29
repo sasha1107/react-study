@@ -5,4 +5,314 @@ import { Pitfall } from '@app/components/Pitfall';
 import { RedCard } from '@app/components/RedCard';
 import { WhiteCard } from '@app/components/WhiteCard';
 
-# Title
+# State를 스냅샷으로
+
+
+state 변수는 읽고 쓸 수 있는 일반 자바스크립트 변수처럼 보일 수 있다.
+
+하지만 state는 스냅샷처럼 동작한다. state를 설정하는 것은 기존에 존재하는 state 변수를 변경하는 것이 아니라, 재렌더를 트리거한다.
+
+<WhiteCard title='You will learn'>
+- 어떻게 state 설정이 재렌더를 트리거하는지
+- 언제 어떻게 state가 업데이트되는지
+- state가 설정 후 즉시 업데이트되지 않는 이유
+- 이벤트 핸들러가 state 설정 후에 "스냅샷"에 접근하는 방법
+</WhiteCard>
+
+- - -
+
+## setting state는 렌더를 트리거한다.
+
+UI가 클릭과 같은 사용자 이벤트에 반응하여 직접 변경된다고 생각할 수 있다.
+
+React에서는 이러한 메탈 모델과는 조금 다르게 동작한다.
+
+이전 페이지에서 setting state가 React에게 재렌더를 요청한다는 것을 보았다.
+
+이는 UI가 이벤트에 반응하려면 state를 업데이트해야 한다는 것을 의미한다.
+
+이 예에서, "send"를 누를 때, setIsSent(true)는 React에게 UI를 다시 렌더링하라고 지시한다:
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Form() {
+  const [isSent, setIsSent] = useState(false);
+  const [message, setMessage] = useState('Hi!');
+  if (isSent) {
+    return <h1>Your message is on its way!</h1>
+  }
+  return (
+    <form onSubmit={(e) => {
+      e.preventDefault();
+      setIsSent(true);
+      sendMessage(message);
+    }}>
+      <textarea
+        placeholder="Message"
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+      />
+      <button type="submit">Send</button>
+    </form>
+  );
+}
+
+function sendMessage(message) {
+  // ...
+}
+`}
+</CodeBlock>
+
+버튼을 클릭했을 때:
+1. `onSubmit` 이벤트 핸들러가 실행된다.
+2. `setIsSent(true)`는 `isSent`를 `true`로 설정하고 새 렌더링을 대기열에 등록한다.
+3. React는 새로운 `isSent` 값에 따라 컴포넌트를 다시 렌더링한다.
+
+state와 렌더링의 관계를 자세히 살펴보자.
+
+- - -
+
+## Rendering takes a snapshot in time 
+
+"렌더링은" 리액트가 함수인 컴포넌트를 호출함을 의미한다.
+
+그 함수에서 반환하는 JSX는 UI의 스냅샷과 같다.
+
+그 속성, 이벤트 핸들러 및 지역 변수는 모두 렌더링 당시의 state를 사용하여 계산된다.
+
+사진이나 영화 프레임과 달리, 당신이 반환하는 UI "스냅샷"은 인터랙티브하다. 그것은 입력에 응답하여 일어나는 일을 지정하는 이벤트 핸들러와 같은 로직을 포함한다.
+
+React는 이 스냅샷을 사용하여 화면을 업데이트하고 이벤트 핸들러를 연결한다.
+
+결과적으로 버튼을 누르면 JSX에서 클릭 핸들러가 트리거된다.
+
+리액트가 컴포넌트를 리랜더할 때:
+1. 리액트는 함수를 다시 호출한다.
+2. 함수는 새 JSX 스냅샷을 반환한다.
+3. 리액트는 반환한 스냅샷에 맞게 화면을 업데이트한다.
+
+
+As a component’s memory, state is not like a regular variable that disappears after your function returns. State actually “lives” in React itself—as if on a shelf!—outside of your function. When React calls your component, it gives you a snapshot of the state for that particular render. Your component returns a snapshot of the UI with a fresh set of props and event handlers in its JSX, all calculated using the state values from that render!
+
+state는 컴포넌트의 메모리로서, 함수가 반환된 후 사라지는 일반 변수와 다르다.
+state는 함수 외부에서 마치 선반에 있는 것처럼 리액트 자체에 "살아있다".
+
+리액트가 컴포넌트를 호출할 때, 특정 렌더링에 대한 상태의 스냅샷을 제공한다. 컴포넌트는 해당 렌더링의 state를 사용해 계산된 새로운 props 세트와 이벤트 핸들러가 포함된 UI의 스냅샷을 반환한다.
+
+
+1. 리액트에게 상태를 업데이트하라고 지시한다.
+2. 리액트는 상태값을 업데이트한다.
+3, 리액트는 상태값의 스냅샷을 컴포넌트에 전달한다.
+
+### 예제: "+3" 버튼을 클릭하면 어떻게 될까
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Counter() {
+  const [number, setNumber] = useState(0);
+
+  return (
+    <>
+      <h1>{number}</h1>
+      <button onClick={() => {
+        setNumber(number + 1);
+        setNumber(number + 1);
+        setNumber(number + 1);
+      }}>+3</button>
+    </>
+  )
+}
+`}
+</CodeBlock>
+
+> number가 `3`이 되길 기대할 수 있겠지만, 한 번 클릭했을 때 number는 `1`이다.
+
+<b>state를 설정하면 다음 렌더링에서만 변경된다.</b>
+
+첫 번째 렌더링에서, `number`는 `0`이다.
+
+따라서 해당 렌더링의 `onClick` 핸들러에서 `setNumber(number + 1)`이 실행된 후에도 `number`의 값은 여전히 `0`이다.
+
+<CodeBlock lang='html'>
+{`<button onClick={() => {
+  setNumber(number + 1);
+  setNumber(number + 1);
+  setNumber(number + 1);
+}}>+3</button>`}
+</CodeBlock>
+
+이 코드는 다음과 같이 동작한다:
+
+1. `setNumber(number + 1)`: `number`는 `0`이므로 `setNumber(0 + 1)`
+    - 리액트는 다음 렌더링에서 `number`를 `1`로 변경할 준비를 한다.
+2. `setNumber(number + 1)`: `number`는 `0`이므로 `setNumber(0 + 1)`
+    - 리액트는 다음 렌더링에서 `number`를 `1`로 변경할 준비를 한다.
+3. `setNumber(number + 1)`: `number`는 `0`이므로 `setNumber(0 + 1)`
+    - 리액트는 다음 렌더링에서 `number`를 `1`로 변경할 준비를 한다.
+
+
+`setNumber(number + 1)`를 세 번 호출했다고 하더라도, 해당 렌더에서 이벤트 핸들러의 `number`는 항상 `0`이다.
+
+따라서 setState(1)을 세 번 호출하는 것과 같다.
+
+이벤트 핸들러가 종료되었을 때, 리액트가 컴포넌트를 number가 `3`이 아닌 `1`로 리렌더링하는 이유이다.
+
+코드에서 상태 변수를 해당 값으로 대입하여 시각화하면 다음과 같다.
+
+<CodeBlock lang='html'>
+{`<button onClick={() => {
+  setNumber(0 + 1);
+  setNumber(0 + 1);
+  setNumber(0 + 1);
+}}>+3</button>`}
+</CodeBlock>
+
+다음 렌더에서, `numb`er는 `1`이므로, 그 때의 렌더링에서 클릭 핸들러는 다음과 같다.
+
+<CodeBlock lang='html'>
+{`<button onClick={() => {
+  setNumber(1 + 1);
+  setNumber(1 + 1);
+  setNumber(1 + 1);
+}}>+3</button>`}
+</CodeBlock>
+
+- - -
+
+## 시간에 따른 상태
+
+alert에 어떤 메시지가 출력될까?
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Counter() {
+  const [number, setNumber] = useState(0);
+
+  return (
+    <>
+      <h1>{number}</h1>
+      <button onClick={() => {
+        setNumber(number + 5);
+        alert(number);
+      }}>+5</button>
+    </>
+  )
+}
+`}
+</CodeBlock>
+
+> 정답: 0
+
+alert에 타이머를 설정한다면 어떻게 될까?
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Counter() {
+  const [number, setNumber] = useState(0);
+
+  return (
+    <>
+      <h1>{number}</h1>
+      <button onClick={() => {
+        setNumber(number + 5);
+        setTimeout(() => {
+          alert(number);
+        }, 3000);
+      }}>+5</button>
+    </>
+  )
+}`}
+</CodeBlock>
+
+> 정답 : h1에는 즉시 5가 표시되고, 3초 후에 0이 alert에 표시된다.
+
+setState의 substitution method(↔ updater function)를 사용하면 alert에 전달된 상태의 '스냅샷'을 볼 수 있다.
+
+<CodeBlock>
+{`setNumber(0 + 5);
+setTimeout(() => {
+  alert(0);
+}, 3000);`}
+</CodeBlock>
+
+
+리액트에 저장된 state는 alert가 실행될 때 변경되었을 수 있지만, 사용자가 상호작용한 시점의 상태 스냅샷을 사용하여 예약(scheduled)되었다.
+
+state 변수는 이벤트 핸들러의 코드가 비동기적이더라도 렌더링 내에서 절대 변경되지 않는다.
+
+해당 렌더링의 `onClick` 내에서, `setNumber(number + 5)`가 호출된 후에도 `number`의 값은 여전히 `0`이다.
+
+이 값은 컴포넌트를 호출해 리액트가 UI의 스냅샷을 가져올 때 <b>"고정(fixed)"</b>된 값이다.
+
+- - - 
+
+다음은 이벤트 핸들러가 타이밍 실수를 줄이는 방법을 보여주는 예이다.
+
+아래는 5초 지연된 메시지를 보내는 양식인데, 다음 시나리오를 상상해보자
+
+1. "Send" 버튼을 클릭하여, "Hello"를 Alice에게 보낸다.
+2. 5초가 지나기 전에, "받는 사람" 필드의 값을 "Bob"으로 변경한다.
+
+alert에 어떤 내용이 표시될까? (Bob / Alice)
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Form() {
+  const [to, setTo] = useState('Alice');
+  const [message, setMessage] = useState('Hello');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setTimeout(() => {
+      alert('You said' + 'message to' + 'to');
+    }, 5000);
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <label>
+        To:{' '}
+        <select
+          value={to}
+          onChange={e => setTo(e.target.value)}>
+          <option value="Alice">Alice</option>
+          <option value="Bob">Bob</option>
+        </select>
+      </label>
+      <textarea
+        placeholder="Message"
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+      />
+      <button type="submit">Send</button>
+    </form>
+  );
+}`}
+</CodeBlock>
+
+> 정답: Alice
+
+리액트는 하나의 이벤트 핸들러 내에서 상태값을 "고정(fixed)"으로 유지한다. 코드가 실행되는 동안 상태가 변경되었는지 걱정할 필요가 없다.
+
+<br/>
+
+하지만 리렌더 전에 최신상태를 읽고 싶다면 어떻게 해야할까?
+
+다음 페이지에서 배울 state updater function을 사용하면 된다!
+
+
+- - -
+
+<WhiteCard title='요약'>
+- state를 설정하면 새 렌더링을 요청한다.
+- 리액트는 컴포넌트 외부에 마치 선반에 보관하듯 state를 저장한다.
+- useState를 호출하면 리액트는 해당 렌더링에 대한 상태의 스냅샷을 제공한다.
+- 변수와 이벤트 핸들러는 재렌더링에서 "생존하지" 않는다. 모든 렌더링에는 새로운 변수와 이벤트 핸들러가 있다.
+- 모든 렌더링(과 그 안에 있는 함수)은 항상 리액트가 해당 렌더링에 자공한 상태의 스냅샷을 보게 된다.
+- 과거에 생성된 이벤트 핸들러는 그것이 생성된 렌더링의 상태값을 갖는다.
+</WhiteCard>
