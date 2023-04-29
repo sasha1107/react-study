@@ -5,4 +5,72 @@ import { Pitfall } from '@app/components/Pitfall';
 import { RedCard } from '@app/components/RedCard';
 import { WhiteCard } from '@app/components/WhiteCard';
 
-# Title
+
+# Render and Commit 
+
+
+컴포넌트가가 화면에 표시되기 전에 React에 의해 렌더링되어야 한다.
+
+이 과정의 단계를 이해하면 코드가 어떻게 실행되는지 생각하고 동작을 설명하는 데 도움이 될 것이다.
+
+<WhiteCard title='You will learn'>
+- 리액트에서 렌더링의 의미
+- 리액트가 컴포넌트를 렌더링하는 시기와 이유
+- 화면에 컴포넌트를 표시하는 단계
+- 렌더링이 항상 DOM 업데이트를 생성하지 않는 이유
+</WhiteCard>
+
+
+당신의 컴포넌트가가 부엌에서 재료로 맛있는 요리를 조립하는 요리사라고 상상해 보자.
+
+이 시나리오에서, 리액트는 고객의 요청을 하고 주문을 가져오는 웨이터이다.
+
+UI를 요청하고 제공하는 이 과정에는 세 단계가 있다:
+
+1. 렌더링 트리거 (손님 주문을 주방에 전달)
+2. 컴포넌트 렌더링 (부엌에서 주문 준비)
+3. DOM에 커밋 (테이블에 주문 배치)
+
+
+## Step 1: 렌더를 트리거
+
+컴포넌트를 렌더링하는 두 가지 이유가 있다:
+
+1. 컴포넌트의 초기 렌더링
+2. 컴포넌트(또는 조상 중 하나)의 상태가 업데이트됨
+
+### 초기 렌더링
+
+앱이 시작될 때, 초기 렌더링을 트리거해야 한다.
+
+프레임워크와 샌드박스는 때때로 이 코드를 숨기지만, target DOM 노드로 createRoot를 호출한 다음 컴포넌트로 렌더링 메서드를 호출하여 수행된다.
+
+> index.js
+
+<CodeBlock>
+{`import Image from './Image.js';
+import { createRoot } from 'react-dom/client';
+
+const root = createRoot(document.getElementById('root'))
+root.render(<Image />);`}
+</CodeBlock>
+
+### 상태 업데이트에 의한 리렌더링
+
+컴포넌트가 처음에 한 번 렌더링되고, setter function으로 상태를 업데이트하여 추가 렌더링을 트리거할 수 있다.
+
+컴포넌트의 상태를 업데이트하면 자동으로 렌더링이 대기됩니다.
+
+## Step 2: 리액트가 컴포넌트를 렌더링한다.
+
+Step 2: React renders your components 
+After you trigger a render, React calls your components to figure out what to display on screen. “Rendering” is React calling your components.
+2단계: React는 구성 요소를 렌더링합니다. 렌더링을 트리거한 후, React는 구성 요소를 호출하여 화면에 무엇을 표시할지 파악합니다. "렌더링"은 당신의 구성 요소를 호출하는 반응입니다.
+* On initial render, React will call the root component.
+* For subsequent renders, React will call the function component whose state update triggered the render.
+초기 렌더링에서, React는 루트 구성 요소를 호출할 것이다. 후속 렌더링의 경우, React는 상태 업데이트가 렌더링을 트리거한 함수 구성 요소를 호출할 것이다.
+
+
+This process is recursive: if the updated component returns some other component, React will render that component next, and if that component also returns something, it will render that component next, and so on. The process will continue until there are no more nested components and React knows exactly what should be displayed on screen.
+In the following example, React will call Gallery() and  Image() several times:
+이 과정은 재귀적입니다: 업데이트된 구성 요소가 다른 구성 요소를 반환하면, React는 그 구성 요소를 다음에 렌더링하고, 그 구성 요소도 무언가를 반환하면, 그 구성 요소를 다음에 렌더링합니다. 이 과정은 더 이상 중첩된 구성 요소가 없을 때까지 계속될 것이며 React는 화면에 무엇이 표시되어야 하는지 정확히 알고 있다. 다음 예에서, React는 Gallery()와 Image()를 여러 번 호출할 것이다:
