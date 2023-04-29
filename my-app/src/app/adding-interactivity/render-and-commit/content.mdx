@@ -31,6 +31,7 @@ UI를 요청하고 제공하는 이 과정에는 세 단계가 있다:
 2. 컴포넌트 렌더링 (부엌에서 주문 준비)
 3. DOM에 커밋 (테이블에 주문 배치)
 
+- - -
 
 ## Step 1: 렌더를 트리거
 
@@ -44,6 +45,8 @@ UI를 요청하고 제공하는 이 과정에는 세 단계가 있다:
 앱이 시작될 때, 초기 렌더링을 트리거해야 한다.
 
 프레임워크와 샌드박스는 때때로 이 코드를 숨기지만, target DOM 노드로 createRoot를 호출한 다음 컴포넌트로 렌더링 메서드를 호출하여 수행된다.
+
+<br/>
 
 > index.js
 
@@ -59,18 +62,126 @@ root.render(<Image />);`}
 
 컴포넌트가 처음에 한 번 렌더링되고, setter function으로 상태를 업데이트하여 추가 렌더링을 트리거할 수 있다.
 
-컴포넌트의 상태를 업데이트하면 자동으로 렌더링이 대기됩니다.
+컴포넌트의 상태를 업데이트하면 자동으로 렌더링이 대기된다.
+
+- - -
 
 ## Step 2: 리액트가 컴포넌트를 렌더링한다.
 
-Step 2: React renders your components 
-After you trigger a render, React calls your components to figure out what to display on screen. “Rendering” is React calling your components.
-2단계: React는 구성 요소를 렌더링합니다. 렌더링을 트리거한 후, React는 구성 요소를 호출하여 화면에 무엇을 표시할지 파악합니다. "렌더링"은 당신의 구성 요소를 호출하는 반응입니다.
-* On initial render, React will call the root component.
-* For subsequent renders, React will call the function component whose state update triggered the render.
-초기 렌더링에서, React는 루트 구성 요소를 호출할 것이다. 후속 렌더링의 경우, React는 상태 업데이트가 렌더링을 트리거한 함수 구성 요소를 호출할 것이다.
+렌더링을 트리거한 후, React는 컴포넌트를 호출하여 화면에 무엇을 표시할지 파악힌다.
+
+"렌더링"은 리액트가 내 컴포넌트를 호출하는 것이다. 
+
+- 초기 렌더링에서, 리액트는 root 컴포넌트를 호출할 것이다.
+- 후속 렌더링에서, 리액트는 상태 업데이트가 렌더링을 트리거한 함수 컴포넌트를 호출할 것이다.
+
+이 과정은 재귀적이다:
+
+- 업데이트된 컴포넌트가 다른 컴포넌트를 반환하면, 리액트는 그 컴포넌트를 호출한다.
+- 그 컴포넌트가 또 다른 컴포넌트를 반환하면, 리액트는 그 컴포넌트를 호출한다.
+- 이 과정은 더 이상 중첩된 컴포넌트가 없을 때까지 계속된다.
+
+<br/>
+
+리액트는 화면에 무엇이 표시되어야 하는지 정확히 알고 있다.
+
+다음 예시에서 리액트는 `Gallery()`와 `Image()`를 여러 번 호출할 것이다:
+
+<CodeBlock>
+{`export default function Gallery() {
+  return (
+    <section>
+      <h1>Inspiring Sculptures</h1>
+      <Image />
+      <Image />
+      <Image />
+    </section>
+  );
+}
+
+function Image() {
+  return (
+    <img
+      src="https://i.imgur.com/ZF6s192.jpg"
+      alt="'Floralis Genérica' by Eduardo Catalano: a gigantic metallic flower sculpture with reflective petals"
+    />
+  );
+}
+`}
+</CodeBlock>
 
 
-This process is recursive: if the updated component returns some other component, React will render that component next, and if that component also returns something, it will render that component next, and so on. The process will continue until there are no more nested components and React knows exactly what should be displayed on screen.
-In the following example, React will call Gallery() and  Image() several times:
-이 과정은 재귀적입니다: 업데이트된 구성 요소가 다른 구성 요소를 반환하면, React는 그 구성 요소를 다음에 렌더링하고, 그 구성 요소도 무언가를 반환하면, 그 구성 요소를 다음에 렌더링합니다. 이 과정은 더 이상 중첩된 구성 요소가 없을 때까지 계속될 것이며 React는 화면에 무엇이 표시되어야 하는지 정확히 알고 있다. 다음 예에서, React는 Gallery()와 Image()를 여러 번 호출할 것이다:
+초기 렌더링 동안, 리액트는 `<section>`, `<h1>`, 그리고 세 개의 `<img>` 태그에 대한 DOM 노드를 생성할 것이다.
+
+리렌더링 동안에는, 리액트는 이전 렌더링 이후에 변경된 속성이 있는지 계산할 것이다.
+
+그것은 다음 단계인 커밋 단계까지 그 정보로 아무것도 하지 않을 것이다.
+
+- - -
+
+<Pitfall>
+<b>렌더링은 항상 순수한 계산이어야 한다.</b>
+
+- 동일한 입력, 동일한 출력
+    - 같은 입력을 주었을 때, 컴포넌트는 항상 같은 JSX를 반환해야 한다.
+- 자신의 일에만 신경을 쓴다.
+    - 렌더링하기 전에 존재했던 객체나 변수를 변경해서는 안 된다.
+    - 그렇지 않으면, 코드 베이스가 복잡해짐에 따라 혼란스러운 버그와 예측할 수 없는 동작을 만날 수 있다.
+    - "Strict Mode"에서 개발할 때, 리액트는 각 컴포넌트의 함수를 두 번 호출한다. 이는 순수하지 않은 함수에 의해 발생한 실수를 쉽게 찾을 수 있도록 도와준다.
+</Pitfall>
+
+- - -
+
+
+## Step 3: 리액트가 DOM을 변경
+
+컴포넌트를 렌더링 한 후, 리액트는 DOM을 변경할 것이다.
+
+초기 렌더링을 위해, React는 `appendChild()` DOM API를 사용하여 화면에 생성된 모든 DOM 노드를 DOM에 집어 넣는다.
+
+재렌더링의 경우, React는 최소한의 필요한 작업을 적용할 것입니다 (렌더링하는 동안 계산됨!) DOM이 최신 렌더링 출력과 일치하도록 하기 위해.
+
+React는 렌더링 사이에 차이가 있는 경우에만 DOM 노드를 변경합니다.
+
+### 예시:
+
+매 초마다 부모로부터 전달된 `time` props로 재렌더링이 발생하는 컴포넌트가 있다.
+
+1초마다 컴포넌트는 재렌더링되지만, `input에 텍스트를 추가해도 다시 렌더링 될 때 텍스트가 사라지지 않는다.
+
+<CodeBlock>
+{`export default function Clock({ time }) {
+  return (
+    <>
+      <h1>{time}</h1>
+      <input />
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+이는 리액트가 새로운 `time`에 대해 `<h1>`의 내용만 업데이트하기 때문이다.
+
+`<input>`은 마지막에 렌더링과 변경된 것이 없기 때문에, 리액트는 `<input>` 또는 그 값에 대해 건드리지 않는다.
+
+- - -
+
+## 에필로그: 브라우저 페인팅
+
+렌더링이 완료되고 React가 DOM을 업데이트하면 브라우저는 화면을 다시 칠힌다.
+
+이 프로세스를 "브라우저 렌더링" 이라고 부르기도 하지만, 문서 전체에서 혼동을 피하기 위해 "painting" 이라고 부를 것이다.
+
+- - -
+<WhiteCard title='요약'>
+리액트 앱의 모든 화면 업데이트는 세 단계로 이루어진다:
+
+1. 트리거
+2. 렌더링
+3. 커밋
+
+Strict 모드를 사용함으로써 컴포넌트에서 실수를 찾을 수 있다.(컴포넌트가 비순수함수인지)
+
+렌더링 결과가 지난번과 동일한 경우 React는 DOM을 건드리지 않는다.
+</WhiteCard>
