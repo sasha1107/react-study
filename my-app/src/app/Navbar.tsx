@@ -184,11 +184,69 @@ export default function Navbar() {
                         <AccordionIcon />
                     </AccordionButton>
                     <AccordionPanel pb={4}>
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-                        sed do eiusmod tempor incididunt ut labore et dolore
-                        magna aliqua. Ut enim ad minim veniam, quis nostrud
-                        exercitation ullamco laboris nisi ut aliquip ex ea
-                        commodo consequat.
+                        <Link href='../../managing-state/reacting-to-input-with-state'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                state로 입력에 반응하기
+                            </Text>
+                        </Link>
+                        <Link href='../../managing-state/choosing-the-state-structure'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                choosing-the-state-structure
+                            </Text>
+                        </Link>
+                        <Link href='../../managing-state/sharing-state-between-components'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                sharing-state-between-components
+                            </Text>
+                        </Link>
+                        <Link href='../../managing-state/preserving-and-resetting-state'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                preserving-and-resetting-state
+                            </Text>
+                        </Link>
+                        <Link href='../../managing-state/extracting-state-logic-into-a-reducer'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                extracting-state-logic-into-a-reducer
+                            </Text>
+                        </Link>
+                        <Link href='../../managing-state/passing-data-deeply-with-context'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                passing-data-deeply-with-context
+                            </Text>
+                        </Link>
+                        <Link href='../../managing-state/scaling-up-with-reducer-and-context'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                scaling-up-with-reducer-and-context
+                            </Text>
+                        </Link>
                     </AccordionPanel>
                 </AccordionItem>
 
