@@ -20,7 +20,7 @@ export default function RootLayout({
                 <Providers>
                     <Header />
                     <Navbar />
-                    <div className='pl-72 p-4 h-full min-h-full min-h-screen'>
+                    <div className='sm:pl-4 md:pl-72 p-4 h-full min-h-full min-h-screen'>
                         <Suspense fallback={<p>loading...</p>}>
                             {children}
                         </Suspense>

@@ -12,13 +12,9 @@ import {
     Link,
 } from '@chakra-ui/react';
 
-export default function Navbar() {
+export const NavbarContents = ()=> {
     return (
-        <div className='float-left min-h-screen w-60 p-2 border-r border[../../custom-hooks/e2e8f0]'>
-            <Text fontSize='xl' className='p-1'>
-                Learn React
-            </Text>
-            <Accordion defaultIndex={[0]} allowMultiple>
+        <Accordion defaultIndex={[0]} allowMultiple>
                 <AccordionItem>
                     <AccordionButton>
                         <Box as='span' flex='1' textAlign='left'>
@@ -357,7 +353,16 @@ export default function Navbar() {
                         </Link>
                     </AccordionPanel>
                 </AccordionItem>
-            </Accordion>
+        </Accordion>
+    )
+}
+export default function Navbar() {
+    return (
+        <div className='float-left min-h-screen md:w-60 p-2 border-r border[../../custom-hooks/e2e8f0] hidden md:block'>
+            <Text fontSize='xl' className='p-1'>
+                Learn React
+            </Text>
+            <NavbarContents />
         </div>
     );
 }
