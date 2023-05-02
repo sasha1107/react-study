@@ -13,7 +13,8 @@ import {
   Td,
   TableContainer,
 } from '@chakra-ui/react'
-
+import Form from './Form'
+import Storybook from './Storybook'
 
 # state로 입력에 반응하기
 
@@ -35,23 +36,31 @@ UI의 개별 부분을 직접 조작하는 대신, 컴포넌트가 있을 수 �
 
 UI 인터랙션을 디자인할 때 사용자 행동에 따라 UI가 어떻게 변하는지 생각해 봤을 것이다.
 사용자가 답변을 제출할 수 있는 form 을 생각해보자:
-
-
-### 명령형 프로그래밍
+<WhiteCard title='Form 예제'>
+<Form/>
+</WhiteCard>
+### 명령형 프로그래밍 (HOW)
 
 - form에 어떤 것을 타입핑하면, "Submit" 버튼이 활성화된다.
 - "Submit" 버튼을 클릭하면, 폼과 버튼이 disabled되고, 로딩 스피너가 나타난다.
 - 네트워크 요청이 성공하면, 폼은 사라지고, "Thank you" 메시지가 나타난다.
 - 네트워크 요청이 실패하면, 에러 메시지가 나타난다. 그리고 폼이 다시 활성화된다.
 
+<br/>
 방금 일어난 일에 따라 UI를 조작하기 위한 정확한 지침을 작성해야 한다.
 
-다른 예시: 자동차 조수석에서 운전자에게 어디로 가야 하는지 알려준다고 상상해보자.
+<br/>
 
+<b>다른 예시: 자동차 조수석에서 운전자에게 어디로 가야 하는지 알려준다고 상상해보자.</b>
+
+<br/>
 운전자는 너가 어디로 가고 싶은지 알지 못하고, 단지 명령만 따른다.
+
+`"여기서 쭉 직진하시다가 롯데리아가 보이시면 우회전 하세요. 직진하다가 두 번째 신호등에서 좌회전하세요. OO호텔이 보일 겁니다"`
 
 (그리고 만약 너가 지시를 잘못내리면, 엉뚱한 곳으로 가게된다!)
 
+<br/>
 이것은 <b>명령형(imperative)</b>이라고 한다. 스피너에서부터 버튼까지, <b>"명령(command)"</b>을 내려 컴퓨터에 UI를 업데이트 하는 방법을 알려줘야 한다.
 
 이 명령형 UI 프로그래밍 예시에서, form은 리액트 없이도 빌드된다. 이는 브라우저 DOM만 사용된다.
@@ -60,45 +69,45 @@ UI 인터랙션을 디자인할 때 사용자 행동에 따라 UI가 어떻게 �
 > index.html
 <CodeBlock lang='html'>
 {`<form id="form">
-  <h2>City quiz</h2>
-  <p>
-    What city is located on two continents?
-  </p>
-  <textarea id="textarea"></textarea>
-  <br />
-  <button id="button" disabled>Submit</button>
-  <p id="loading" style="display: none">Loading...</p>
-  <p id="error" style="display: none; color: red;"></p>
-</form>
-<h1 id="success" style="display: none">That's right!</h1>
+    <h2>City quiz</h2>
+    <p>
+      What city is located on two continents?
+    </p>
+    <textarea id="textarea"></textarea>
+    <br />
+    <button id="button" disabled>Submit</button>
+    <p id="loading" style="display: none">Loading...</p>
+    <p id="error" style="display: none; color: red;"></p>
+  </form>
+  <h1 id="success" style="display: none">That's right!</h1>
 
-<style>
-* { box-sizing: border-box; }
-body { font-family: sans-serif; margin: 20px; padding: 0; }
-</style>`}
+  <style>
+  * { box-sizing: border-box; }
+  body { font-family: sans-serif; margin: 20px; padding: 0; }
+  </style>`}
 </CodeBlock>
 
 > index.js
 
 <CodeBlock>
 {`async function handleFormSubmit(e) {
-  e.preventDefault();
-  disable(textarea);
-  disable(button);
-  show(loadingMessage);
-  hide(errorMessage);
-  try {
-    await submitForm(textarea.value);
-    show(successMessage);
-    hide(form);
-  } catch (err) {
-    show(errorMessage);
-    errorMessage.textContent = err.message;
-  } finally {
-    hide(loadingMessage);
-    enable(textarea);
-    enable(button);
-  }
+    e.preventDefault();
+    disable(textarea);
+    disable(button);
+    show(loadingMessage);
+    hide(errorMessage);
+    try {
+      await submitForm(textarea.value);
+      show(successMessage);
+      hide(form);
+    } catch (err) {
+      show(errorMessage);
+      errorMessage.textContent = err.message;
+    } finally {
+      hide(loadingMessage);
+      enable(textarea);
+      enable(button);
+    }
 }
 
 function handleTextareaChange() {
@@ -165,13 +174,17 @@ UI를 조작하는 것은 고립된 예제에서는 충분히 잘 작동하지�
 
 대신 <b>표시할 내용을 선언하면,</b> 리액트가 UI를 업데이트 하는 방법을 알아낸다.
 
+<br/>
 택시를 타고 기사에게 정확히 어느 방향으로 갈지 말하는 대신, 목적지를 말한다고 생각해보자.
 
+<br/>
+`"OO 호텔은 xxx동 xxx로 xx길 10에 있습니다.`
+<br/>
 목적지로 데려다 주는 것은 운전기사의 몫이며, 운전기사는 여러분이 미처 생각하지 못한 지름길을 알고 있을 수도 있다!
 
 - - -
 
-### 선언형 프로그래밍
+### 선언형 프로그래밍 (WHAT)
 
 위에서 form을 명령형으로 구현하는 방법을 살펴봤다.
 
@@ -185,23 +198,31 @@ UI를 조작하는 것은 고립된 예제에서는 충분히 잘 작동하지�
 
 - - -
 
-#### STEP 1: 컴포넌트의 다양한 시각적 상태를 식별(Identify)하기
+>#### STEP 1: 컴포넌트의 다양한 시각적 상태를 식별(Identify)하기
 
 컴퓨터 사이언스에서, 여러 "states" 중 하나에 있는 "state machine"에 대해 들어봤을 것이다.
 
-디자이너와 함께 일한다면, 다양한 "시각적 상태(visual states)"에 대한 목업을 보았을 것이다.
+<DeepDive>
+#### State Machines (상태 기계)
+유한한 개수의 상태를 가질 수 있는 오토마타, 즉 추상 기계라고 할 수 있다. 이러한 기계는 한 번에 오로지 하나의 상태만을 가지게 되며, 현재 상태(Current State)란 임의의 주어진 시간의 상태를 칭한다. 이러한 기계는 어떠한 사건(Event)에 의해 한 상태에서 다른 상태로 변화할 수 있으며, 이를 전이(Transition)이라 한다.
+
+- 예) 신호등
+
+</DeepDive>
+- - -
+디자이너와 함께 일한다면, 다양한 <b>"시각적 상태(visual states)"</b>에 대한 목업을 보았을 것이다.
 
 리액트는 디자인과 컴퓨터 사이언스의 교차점에 서 있기 때문에, 이 두 가지 아이디어는 모두 영감의 원천이다. 
 
 <br/>
 
-먼저, 사용자에게 표시될 수 있는 UI의 다양한 "상태들(states)"을 모두 시각화해야 한다. 
+먼저, 사용자에게 표시될 수 있는 UI의 다양한 <b>"상태들(states)"</b>을 모두 시각화해야 한다. 
 
-- Empty : Form 에 "Submit" 버튼이 비활성화되어 있다.
-- Typing : Form에 "Submit" 버튼이 활성화되어 있다.
-- Submitting : Form이 완전히 비화성화되었다. 스피너가 표시된다.
-- Success: Form 대신 "Thank you" 메시지가 표시된다.
-- Error: Typing 상태와 동일하지만, 추가 오류 메시지가 표시된다.
+- <b>Empty</b> : Form 에 "Submit" 버튼이 비활성화되어 있다.
+- <b>Typing</b> : Form에 "Submit" 버튼이 활성화되어 있다.
+- <b>Submitting</b> : Form이 완전히 비화성화되었다. 스피너가 표시된다.
+- <b>Success</b>: Form 대신 "Thank you" 메시지가 표시된다.
+- <b>Error</b>: Typing 상태와 동일하지만, 추가 오류 메시지가 표시된다.
 
 디자이너와 마찬가지로, 로직을 추가하기 전에 다양한 상태에 대한 "목업"을 만들거나 "mocks"를 만들고 싶을 것이다.
 
@@ -211,27 +232,27 @@ UI를 조작하는 것은 고립된 예제에서는 충분히 잘 작동하지�
 
 <CodeBlock>
 {`export default function Form({
-  status = 'empty'
-}) {
-  if (status === 'success') {
-    return <h1>That's right!</h1>
-  }
-  return (
-    <>
-      <h2>City quiz</h2>
-      <p>
-        In which city is there a billboard that turns air into drinkable water?
-      </p>
-      <form>
-        <textarea />
-        <br />
-        <button>
-          Submit
-        </button>
-      </form>
-    </>
-  )
-}`}
+    status = 'empty'
+  }) {
+    if (status === 'success') {
+      return <h1>That's right!</h1>
+    }
+    return (
+      <>
+        <h2>City quiz</h2>
+        <p>
+          In which city is there a billboard that turns air into drinkable water?
+        </p>
+        <form>
+          <textarea />
+          <br />
+          <button>
+            Submit
+          </button>
+        </form>
+      </>
+    )
+  }`}
 </CodeBlock>
 
 prop에 원하는 이름을 붙일 수 있으며, 이름은 중요하지 않다.
@@ -248,44 +269,43 @@ prop에 원하는 이름을 붙일 수 있으며, 이름은 중요하지 않다.
 
 <CodeBlock>
 {`export default function Form({
-  // Try 'submitting', 'error', 'success':
-  status = 'empty'
-}) {
-  if (status === 'success') {
-    return <h1>That's right!</h1>
-  }
-  return (
-    <>
-      <h2>City quiz</h2>
-      <p>
-        In which city is there a billboard that turns air into drinkable water?
-      </p>
-      <form>
-        <textarea disabled={
-          status === 'submitting'
-        } />
-        <br />
-        <button disabled={
-          status === 'empty' ||
-          status === 'submitting'
-        }>
-          Submit
-        </button>
-        {status === 'error' &&
-          <p className="Error">
-            Good guess but a wrong answer. Try again!
-          </p>
-        }
-      </form>
-      </>
-  );
-}`}
+    // Try 'submitting', 'error', 'success':
+    status = 'empty'
+  }) {
+    if (status === 'success') {
+      return <h1>That's right!</h1>
+    }
+    return (
+      <>
+        <h2>City quiz</h2>
+        <p>
+          In which city is there a billboard that turns air into drinkable water?
+        </p>
+        <form>
+          <textarea disabled={
+            status === 'submitting'
+          } />
+          <br />
+          <button disabled={
+            status === 'empty' || status === 'submitting'
+          }>
+            Submit
+          </button>
+          {status === 'error' &&
+            <p className="Error">
+              Good guess but a wrong answer. Try again!
+            </p>
+          }
+        </form>
+        </>
+    );
+  }`}
 </CodeBlock>
 
 <DeepDive>
 ### 한 번에 여러 시각적 상태 표시 (스토리북)
 
-컴포넌트에 시각적 상태가 많은 경우, 한 페이지에 표시하는 것이 편리활 수 있다.
+컴포넌트에 시각적 상태가 많은 경우, 한 페이지에 표시하는 것이 편리할 수 있다.
 
 > App.js
 <CodeBlock>
@@ -341,45 +361,48 @@ export default function App() {
 }`}
 </CodeBlock>
 
+<Storybook/>
+- - -
 <br/>
-이러한 페이지를 흔히 "living styleguides" 또는 "storybook"이라고 부른다.
+이러한 페이지를 흔히 <b>"living styleguides"</b> 또는 <b>"storybook"</b>이라고 부른다.
 </DeepDive>
 - - -
 
-#### STEP 2: 상태 변경을 트리거 하는 요소를 결정(Determine)
+>#### STEP 2: 상태 변경을 트리거 하는 요소를 결정(Determine)
 
 다음 두 가지 종류의 입력에 대한 응답으로 상태 업데이트를 트리거할 수 있다.
 
-- <b>Human inputs</b> : 버튼 클릭, 필드 입력, 링크 탐색
-- <b>Computer inputs</b> : 네트워크 응답 도착, timeout 완료, 이미지 로딩
+- <b>Human inputs 👆</b> : 버튼 클릭, 필드 입력, 링크 탐색
+- <b>Computer inputs 🖥️</b> : 네트워크 응답 도착, timeout 완료, 이미지 로딩
 
 <br/>
 
 두 경우 모두 UI를 업데이트하려면 상태 변수를 설정해야 한다.
 예시로 봤던 form의 경우, 몇 가지 다른 입력에 대한 응답으로 상태를 변경해야 한다.
 
-- 텍스트 인풋 변경(휴먼)
+- 텍스트 인풋 변경(휴먼 👆)
     - 텍스트 박스가 비어있는지 여부에 따라
-    - Empty -> Typing
-    - Typing -> Empty
-- Submit 버튼 클릭(휴먼)
-    - Submitting 상태로 변경
-- 네트워크 응답 성공(컴퓨터)
-    - Submitting -> Success
-- 네트워크 응답 실패(컴퓨터)
-    - Submitting -> Error
+    - `Empty` -> `Typing`
+    - `Typing` -> `Empty`
+- Submit 버튼 클릭(휴먼 👆)
+    - `Submitting` 상태로 변경
+- 네트워크 응답 성공(컴퓨터 🖥️)
+    - `Submitting` -> `Success`
+- 네트워크 응답 실패(컴퓨터 🖥️)
+    - `Submitting` -> `Error`
 
 <WhiteCard title='Note'>
 사람의 입력에는 종종 이벤트 핸들러가 필요하다!
 </WhiteCard>
-
-<img src='https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fresponding_to_input_flow.png&w=1920&q=75' alt='form states flow chart'/>
-이 흐름을 시각화해보세요. 이러한 방식으로 많은 플로우를 스캐치하고 구현하기 훨씬 전에 버그를 분류할 수 있다.
+<br/>
+<img src='https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fresponding_to_input_flow.png&w=1920&q=75' alt='form states flow chart' width='80%'/>
+<br/>
+이 흐름을 시각화해보세요. 이러한 방식으로 많은 플로우를 스케치하고 구현하기 훨씬 전에 버그를 분류할 수 있다.
 
 - - -
 
 
-#### STEP 3: `useState`를 사용해 메모리에서 상태를 표현(Represent)
+>#### STEP 3: `useState`를 사용해 메모리에서 상태를 표현(Represent)
 
 다음은 컴포넌트의 시각적 상태를 메모리에서 `useState`를 사용해 표현해야 한다. 단순함이 핵심이다: 각 상태 조각은 "움직이는 조각"이며, 가능한 적은 수의 "움직이는 조각"을 원한다. 복잡하면 버그가 더 많이 발생한다!
 
@@ -389,7 +412,7 @@ export default function App() {
 
 <CodeBlock>
 {`const [answer, setAnswer] = useState('');
-const [error, setError] = useState(null);`}
+ const [error, setError] = useState(null);`}
 </CodeBlock>
 
 그런 다음, 표시하려는 시각적 상태를 나타내는 상태 변수가 필요하다. 일반적으로 메모리에 이를 표현하는 방법은 여러 가지가 있으므로 실험해 볼 필요가 있다.
@@ -411,7 +434,7 @@ const [isError, setIsError] = useState(false);`}
 
 - - -
 
-#### STEP 4: 필수적이지 않은 상태 변수를 제거(Remove)
+>#### STEP 4: 필수적이지 않은 상태 변수를 제거(Remove)
 
 상태 content의 중복을 방지하여 필수적인 것만 추적하고 싶을 것이다. 상태 구조를 리팩토링하는데 약간의 시간만 투자하면, 컴포넌트를 더 쉽게 이해하고, 중복을 줄이며, 의도하지 않은 의미를 피할 수 있다. 목표는 <b>메모리에 있는 상태가 사용자에게 표시되기를 원하는 유효한 UI를 나타내지 않는 경우를 방지하는 것</b>이다. (예를 들어, 오류 메시지를 표시하면서 동시에 입력을 비활성화하면 사용자가 오류를 수정할 수 없게 된다.)
 
@@ -490,7 +513,7 @@ const [status, setStatus] = useState('typing'); // 'typing', 'submitting', or 's
 
 <br/>
 
-예를 들어, `status`가 `success일 때, null이 아닌 `error`는 의미가 없다.
+예를 들어, `status`가 `success`일 때, null이 아닌 `error`는 의미가 없다.
 
 <br/>
 상태를 보다 정확하게 모델링하기 위해, 상태를 [reducer로 추출할 수 있다](../managing-state/extracting-state-logic-into-a-reducer).
@@ -500,7 +523,7 @@ Reducer를 사용하면 여러 상태 변수를 단일 오브젝트로 통합하
 
 - - -
 
-#### STEP 5: 이벤트 핸들러를 연결해 상태 설정하기
+>#### STEP 5: 이벤트 핸들러를 연결해 상태 설정하기
 
 
 마지막으로, 상태를 업데이트하는 이벤트 핸들러를 만든다. 아래는 모든 이벤트 핸들러가 연결된 최종적인 form 코드이다:
