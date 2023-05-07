@@ -21,7 +21,7 @@ export default function Header() {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const btnRef = useRef<HTMLDivElement>(null);
     return (
-        <div className='w-screen bg-black p-4 pr-8 sticky top-0 z-50 flex items-center gap-2'>
+        <div className='w-screen bg-black p-4 sticky top-0 z-50 flex items-center gap-2'>
             <Logo
                 width='30'
                 height='30'
