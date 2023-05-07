@@ -12,6 +12,7 @@ import Counter5 from './Counter5'
 import MyComponent from './MyComponent'
 import Counter6 from './Counter6'
 import Counter7 from './Counter7'
+import Counter8 from './Counter8'
 
 # 상태 보존 & 재설정
 
@@ -603,4 +604,203 @@ function Counter({ person }) {
 이 예에서는 두 개만 있으므로 JSX에서 둘 다 별도로 렌더링하는 것이 번거롭지 않습니다.
 - - -
 
-### 2. 각 컴포넌트에 `key`로 명시적인 식별자를 부여하기 
+### 2. 각 컴포넌트에 `key`로 명시적인 식별자를 부여하기
+
+컴포넌트의 상태를 재설정하는 더 일반적인 방법도 있다.
+
+<br/>
+
+리스트를 렌더링할 때 `key`를 본적이 있을 것이다.
+
+키는 리스트에만 사용되는 것이 아니다!
+
+키를 사용해 리액트가 모든 컴포넌트를 구분할 수 있다.
+
+기본적으로 리액트는 부모 내의 순서("첫 번째 카운터", "두 번째 카운터")를 사용해 컴포넌트를 구분한다. 하지만 키를 사용하면 이것이 첫번째 카운터나 두 번째 카운터가 아니라 특정 카운터임(예: Taylor의 카운터)을 리액트에 알릴 수 있다. 이렇게 하면 리액트는 Taylor의 카운터가 트리 어디에 나타나든 알 수 있다.
+
+<br/>
+
+이 예제에서는 두 `<Counter />`가 JSX에서 같은 위치에 표시되지만 상태를 공유하지 않습니다:
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Scoreboard() {
+  const [isPlayerA, setIsPlayerA] = useState(true);
+  return (
+    <div>
+      {isPlayerA ? (
+        <Counter key="Taylor" person="Taylor" />
+      ) : (
+        <Counter key="Sarah" person="Sarah" />
+      )}
+      <button onClick={() => {
+        setIsPlayerA(!isPlayerA);
+      }}>
+        Next player!
+      </button>
+    </div>
+  );
+}
+
+function Counter({ person }) {
+  const [score, setScore] = useState(0);
+  const [hover, setHover] = useState(false);
+
+  let className = 'counter';
+  if (hover) {
+    className += ' hover';
+  }
+
+  return (
+    <div
+      className={className}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => setHover(false)}
+    >
+      <h1>{person}'s score: {score}</h1>
+      <button onClick={() => setScore(score + 1)}>
+        Add one
+      </button>
+    </div>
+  );
+}
+`}
+</CodeBlock>
+
+<Counter8/>
+
+Taylor와 Sarah 사이를 전환해도 상태가 유지되지 않습니다. 서로 다른 키를 부여했기 때문입니다:
+
+<br/>
+<WhiteCard>
+<CodeBlock>
+{`{isPlayerA ? (
+  <Counter key="Taylor" person="Taylor" />
+) : (
+  <Counter key="Sarah" person="Sarah" />
+)}`}
+</CodeBlock>
+</WhiteCard>
+
+`key`를 지정하면 리액트가 부모 내 순서가 아닌 키 자체를 위치의 일부로 사용하도록 지시한다. 그렇기 때문에, JSX에서 같은 위치에 렌더링하더라도 리액트는 두 카운터를 서로 다른 카운터로 인식하므로 상태를 공유하지 않는다.
+
+<br/>
+
+카운터가 화면에 나타날 때마다 그 상태가 생성된다. 카운터가 제거될 때마다 그 상태는 소멸된다 두 카운터 사이를 토글하면 상태가 계속 초기화된다.
+
+<WhiteCard title='NOTE'>
+키는 전역적으로 고유하지 않다는 점을 기억해라.
+
+키는 부모 내에서 위치만 지정한다.
+</WhiteCard>
+
+- - -
+
+## key로 from 리셋하기
+
+키로 상태를 리셋하는 것은 form 을 다룰 때 특히 유용하다.
+
+이 채팅 앱에서 `<Chat>` 컴포넌트는 텍스트 입력 상태를 포함합니다:
+
+
+<CodeBlock>
+{`import { useState } from 'react';
+import Chat from './Chat.js';
+import ContactList from './ContactList.js';
+
+export default function Messenger() {
+  const [to, setTo] = useState(contacts[0]);
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedContact={to}
+        onSelect={contact => setTo(contact)}
+      />
+      <Chat contact={to} />
+    </div>
+  )
+}
+
+const contacts = [
+  { id: 0, name: 'Taylor', email: 'taylor@mail.com' },
+  { id: 1, name: 'Alice', email: 'alice@mail.com' },
+  { id: 2, name: 'Bob', email: 'bob@mail.com' }
+];`}
+</CodeBlock>
+
+<iframe src="https://codesandbox.io/embed/silent-hill-e2gbfe?fontsize=14&hidenavigation=1&theme=dark"
+      style={{width: '100%', height: '500px', border: '0', borderRadius: '4px', overflow: 'hidden'}}
+      title="silent-hill-e2gbfe"
+      allow="geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb"
+      sandbox="allow-modals allow-forms allow-popups allow-scripts allow-same-origin" 
+></iframe>
+   입력 란에 무언가를 입력한 다음 다른 수신자를 선택하세요.
+`<Chat>`이 트리의 동일한 위치에 렌더링되므로 입력 상태가 유지되는 것을 알 수 있습니다
+
+<br/>
+
+많은 앱에서는, 이러한 동작이 바람직할 수 있지만, 채팅 앱에서는 그렇지 않다!
+
+<br/>
+사용자가 실수로 클릭해서 이미 입력한 메시지를 엉뚱한 사람에게 보내는 것을 원치 않을 것이다. 이 문제를 해결하려면 `key를 추가하세요:
+
+<CodeBlock>
+{`<Chat key={to.id} contact={to} />`}
+</CodeBlock>
+
+이렇게 하면 다른 수신자를 선택하면 채팅 컴포넌트가 그 아래 트리의 모든 상태를 포함하여 처음부터 다시 생성된다. 또한 리액트는 돔 엘리먼트를 재사용하는 대신 -> 다시 생성한다.
+
+이제 수신자를 전환하면 항상 텍스트 필드가 지워진다.
+
+<CodeBlock>
+{`import { useState } from 'react';
+import Chat from './Chat.js';
+import ContactList from './ContactList.js';
+
+export default function Messenger() {
+  const [to, setTo] = useState(contacts[0]);
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedContact={to}
+        onSelect={contact => setTo(contact)}
+      />
+      <Chat key={to.id} contact={to} /> ⭐️
+    </div>
+  )
+}
+
+const contacts = [
+  { id: 0, name: 'Taylor', email: 'taylor@mail.com' },
+  { id: 1, name: 'Alice', email: 'alice@mail.com' },
+  { id: 2, name: 'Bob', email: 'bob@mail.com' }
+];`}
+</CodeBlock>
+
+<DeepDive>
+## 제거된 컴포넌트에 대한 상태 보존
+
+실제 채팅 앱에서는 사용자가 이전 수신자를 다시 선택할 때 입력 상태를 복구하고 싶을 것이다. 더 이상 표시되지 않는 컴포넌트의 상태를 "살아있게" 유지하는 몇 가지 방법이 있다.
+
+<br/>
+
+- 현재 채팅만 렌더링하는 것이 아니라 모든 채팅을 렌더링하되 다른 모든 채팅은 CSS로 숨길 수 있다. 채팅은 트리에서 제거되지 않으므로 로컬 state가 유지된다. 이 솔루션은 간단한 UI에 적합하다. 하지만 숨겨진 트리가 많고 많은 돔 노드를 포함하는 경우 속도가 매우 느려질 수 있다.
+- 각 수신자에 대해 보류 중인 메시지 상태를 부모 컴포넌트로 올려서(lift) 보관할 수 있다. 이렇게 하면 하위 컴포넌트가 제거되더라도 중요한 정보를 보관하는 것은 상위 컴포넌트이므로 문제가 되지 않는다. 이것이 가장 일반적인 해결책이다.
+- 리액트의 상태 외에 다른 소스를 사용할 수도 있다. 예를 들어, 사용자가 실수로 페이지를 닫아도 메시지 초안이 유지되기를 원할 수 있다. 이를 구현하기 위해 `Chat` 컴포넌트가 `localStorage`에 초안을 저장하고, `localStorage`에서 상태를 읽어올수 있도록 할 수 있다. 
+
+<br/>
+
+어떤 전략을 선택하든 Alice와의 채팅은 Bob과의 채팅과 개념적으로 구별되므로 현재 수신자를 기준으로 `<Chat>` 트리에 키를 부여하는 것이 합리적입니다.
+</DeepDive>
+
+<WhiteCard>
+## 요약
+
+- 리액트는 동일한 컴포넌트가 동일한 위치에서 렌더링되는 한 상태를 유지한다.
+- 상태는 JSX 태그에 보관되지 않는다. JSX를 넣은 트리 위치와 연관되어 있다.
+- 하위 트리에 다른 키를 지정하여 강제로 상태를 리셋할 수 있다.
+- 컴포넌트 정의를 중첩하지 마라, 중첩하면 실수로 상태가 초기화될 것이다.
+</WhiteCard>
