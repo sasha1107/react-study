@@ -4,5 +4,603 @@ import { CodeBlock } from '@app/components/CodeBlock';
 import { Pitfall } from '@app/components/Pitfall';
 import { RedCard } from '@app/components/RedCard';
 import { WhiteCard } from '@app/components/WhiteCard';
+import Counter from './Counter'
+import Counter2 from './Counter2'
+import Counter3 from './Counter3'
+import Counter4 from './Counter4'
+import Counter5 from './Counter5'
+import MyComponent from './MyComponent'
+import Counter6 from './Counter6'
+import Counter7 from './Counter7'
 
-# Title
+# 상태 보존 & 재설정
+
+상태는 컴포넌트 간에 격리된다. 리액트는 UI 트리에서 어떤 컴포넌트가 어떤 상태에 속하는 지를 추적한다.언제 상태를 보존할지, 언제 재렌더링 사이에 상태를 리셋할지 제어할 수 있다.
+
+<WhiteCard title='You will learn'>
+- 리액트가 컴포넌트 구조를 "보는" 법
+- 리액트가 상태를 보존하거나 리셋하도록 선택할 때
+- 리액트가 컴포넌트의 상태를 리셋하도록 강제하는 방법
+- 키와 타입이 상태 보존 여부에 영향을 미치는 방법
+</WhiteCard>
+
+- - -
+
+## UI 트리
+
+브라우저는 UI를 모델링하기 위해 많은 트리구조를 사용한다. <b>DOM</b>은 HTML 요소를 나타내고, <b>CSSOM</b>은 CSS에 대해 동일한 역할을 한다. 심지어는 <b>접근성 트리</b>도 있다.
+
+<br/>
+
+리액트 또한 트리 구조를 사용하여 사용자가 만든 UI를 관리하고 모델링한다. 리액트는 JSX애서 UI 트리를 만든다. 그런 다음 리액트 돔은 해당 UI 트리와 일치하도록 브라우저 DOM 요소를 업데이트한다. (리액트 네이티브는 이러한 트리를 모바일 플랫폼에 특정한 요소로 변환한다.)
+<br/>
+
+![이미지](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_dom_tree.png&w=1920&q=75)
+
+## state는 트리의 위치에 묶여 있다.
+
+
+컴포넌트에 state를 부여할 때, state가 컴포넌트 내부에 "살아있다"고 생각할 수 있다. 하지만 state는 실재로 리액트 내부에서 유지된다. 리액트는 ui 트리에서 해당 컴포넌트가 어디에 위치하는지에 따라 보유하고 있는 각 state를 올바른 컴포넌트와 연결한다.
+
+<br/>
+
+`<Counter />` JSX 태그가 하나만 있지만, 두개의 다른 위치에서 렌더링되는 코드가 있다.
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function App() {
+  const counter = <Counter />;
+  return (
+    <div>
+      {counter}
+      {counter}
+    </div>
+  );
+}
+
+function Counter() {
+  const [score, setScore] = useState(0);
+  const [hover, setHover] = useState(false);
+
+  let className = 'counter';
+  if (hover) {
+    className += ' hover';
+  }
+
+  return (
+    <div
+      className={className}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => setHover(false)}
+    >
+      <h1>{score}</h1>
+      <button onClick={() => setScore(score + 1)}>
+        Add one
+      </button>
+    </div>
+  );
+}`}
+</CodeBlock>
+
+트리로 표시되는 모습은 다음과 같다.
+
+<br/>
+![image](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_tree.png&w=828&q=75)
+
+<br/>
+
+이 카운터는 각각 트리에서 고유한 위치에 렌더링되기 때문에, 두 개는 별개의 카운터이다. 일반적으로 리액트를 사용할 때 이러한 위치에 대해 생각할 필요는 없지만, 작동 방식을 이해하는 것이 유용할 수 있다.
+
+<br/>
+
+리액트에서 화면의 각 컴포넌트는 완전히 분리된 상태를 갖는다. 예를 들어 두 개의 카운터 컴포넌트를 나란히 렌더링하면 각각 독립적인 `score`, `hover` state를 갖는다.
+
+<br/>
+
+두 카운터를 모두 클릭해보면 서로 영향을 주지 않는 것을 확인할 수 있다.
+
+<br/>
+
+<div className='flex gap-2'>
+  <Counter/ >
+  <Counter/ >
+</div>
+
+<br/>
+
+카운터 하나가 업데이트되면, 해당 컴포넌트에 대한 상태만 업데이트 된다.
+
+<br/>
+
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_increment.png&w=1080&q=75)
+
+<br/>
+
+리액트는 같은 컴포넌트를 같은 위치에 렌더링하는 한 그 상태를 유지한다. 이를 확인하려면, 두 카운터를 모두 증가시킨 다음 "두번째 카운터 렌더링" 체크 박스를 선택해제 하여 두 번째 컴포넌트를 제거한 다음 다시 선택하여 다시 추가해보세요:
+
+<br/>
+<Counter2/>
+
+<br/>
+
+두 번째 카운터 렌더링을 중단하는 순간, state가 완전히 사라지는 것을 주목해라. 리액트가 컴포넌트를 제거하면 그 상태가 소멸되기 때문이다.
+
+<br/>
+![deleting component](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_remove_component.png&w=1080&q=75)
+
+<br/>
+
+"Render the second counter"를 선택하면, 두 번째 `Counter`와 그 상태가 초기화되고(`score = 0`), 돔에 추가된다.
+
+<br/>
+
+![adding a component](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_add_component.png&w=1080&q=75)
+
+<br/>
+
+리액트는 컴포넌트가 ui 트리의 해당 위치에서 렌더링되는 동안 ,컴포넌트의 상태를 유지한다. 컴포넌트가 제거되거나 같은 위치에 다른 컴포넌트가 렌더링되면 리액트는 해당 컴포넌트의 상태를 삭제한다.
+
+- - - 
+
+## 동일한 위치 - 동일한 컴포넌트는 상태를 유지한다.
+
+이 예제에는 두 개의 서로 다른 `<Counter />` 태그가 있다.
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function App() {
+  const [isFancy, setIsFancy] = useState(false);
+  return (
+    <div>
+      {isFancy ? (
+        <Counter isFancy={true} /> 
+      ) : (
+        <Counter isFancy={false} /> 
+      )}
+      <label>
+        <input
+          type="checkbox"
+          checked={isFancy}
+          onChange={e => {
+            setIsFancy(e.target.checked)
+          }}
+        />
+        Use fancy styling
+      </label>
+    </div>
+  );
+}
+
+function Counter({ isFancy }) {
+  const [score, setScore] = useState(0);
+  const [hover, setHover] = useState(false);
+
+  let className = 'counter';
+  if (hover) {
+    className += ' hover';
+  }
+  if (isFancy) {
+    className += ' fancy';
+  }
+
+  return (
+    <div
+      className={className}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => setHover(false)}
+    >
+      <h1>{score}</h1>
+      <button onClick={() => setScore(score + 1)}>
+        Add one
+      </button>
+    </div>
+  );
+}
+`}
+</CodeBlock>
+
+<br/>
+<Counter3/>
+
+<br/>
+
+체크 박스를 선택하거나 선택을 취소해도 카운터 state는 리셋되지 않는다. `isFancy`가 참이든 거짓이든, 루트 `App` 컴포넌트에서 반환된 div의 첫번쨰 자식에는 항상 `<Counter />` 가 있다.
+
+<br/>
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_same_component.png&w=1200&q=75)
+
+<br/> 
+카운터는 동일한 위치에 유지되므로 `App` 상태를 업데이트해도 카운터는 리셋되지 않는다.
+
+
+<br/>
+<Pitfall>
+리액트에서 중요한 것은 <b>UI 트리에서의 위치이다!</b>
+(JSX 마크업이 아니라)
+
+<br/>
+이 컴포넌트에서는 if 내부와 외부에 서로 다른 <Counter /> JSX 태그가 있는 두 개의 반환절이 있다.
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function App() {
+  const [isFancy, setIsFancy] = useState(false);
+  if (isFancy) {
+    return (
+      <div>
+        <Counter isFancy={true} />
+        <label>
+          <input
+            type="checkbox"
+            checked={isFancy}
+            onChange={e => {
+              setIsFancy(e.target.checked)
+            }}
+          />
+          Use fancy styling
+        </label>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <Counter isFancy={false} />
+      <label>
+        <input
+          type="checkbox"
+          checked={isFancy}
+          onChange={e => {
+            setIsFancy(e.target.checked)
+          }}
+        />
+        Use fancy styling
+      </label>
+    </div>
+  );
+}
+
+function Counter({ isFancy }) {
+  const [score, setScore] = useState(0);
+  const [hover, setHover] = useState(false);
+
+  let className = 'counter';
+  if (hover) {
+    className += ' hover';
+  }
+  if (isFancy) {
+    className += ' fancy';
+  }
+
+  return (
+    <div
+      className={className}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => setHover(false)}
+    >
+      <h1>{score}</h1>
+      <button onClick={() => setScore(score + 1)}>
+        Add one
+      </button>
+    </div>
+  );
+}`}
+</CodeBlock>
+
+<br/>
+체크 박스를 선택하면 상태가 리셋될 것으로 예상할 수 있지만, 그렇지 않다. `<Counter/>` 태그가 모두 같은 위치에 렌더링되기 때문이다. 리액트는 함수에서 조건을 어디에 배치했는지 알지 못하고, 단지 리턴하는 트리만 "볼" 수 있다.
+
+<br/>
+
+두 경우 App 컴포넌트는 `<Counter />`를 첫 번째 자식으로 가진 `<div>`를 반환합니다. React에서 이 두 카운터는 (루트의 - 첫 번째 자식의 - 첫 번째 자식)이라는 동일한 "주소"를 갖습니다. 이것이 로직을 어떻게 구성하든 상관없이 React가 이전 렌더링과 다음 렌더링 사이에서 이를 일치시키는 방식입니다.
+</Pitfall>
+
+- - -
+
+## 동일한 위치에서 다른 컴포넌트 - 상태 리셋
+
+이 예제에서 체크박스를 선택하면 `<Counter>`가 `<p>`로 바뀝니다:
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function App() {
+  const [isPaused, setIsPaused] = useState(false);
+  return (
+    <div>
+      {isPaused ? (
+        <p>See you later!</p> 
+      ) : (
+        <Counter /> 
+      )}
+      <label>
+        <input
+          type="checkbox"
+          checked={isPaused}
+          onChange={e => {
+            setIsPaused(e.target.checked)
+          }}
+        />
+        Take a break
+      </label>
+    </div>
+  );
+}
+
+function Counter() {
+  const [score, setScore] = useState(0);
+  const [hover, setHover] = useState(false);
+
+  let className = 'counter';
+  if (hover) {
+    className += ' hover';
+  }
+
+  return (
+    <div
+      className={className}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => setHover(false)}
+    >
+      <h1>{score}</h1>
+      <button onClick={() => setScore(score + 1)}>
+        Add one
+      </button>
+    </div>
+  );
+}`}
+</CodeBlock>
+
+<br/>
+<Counter4/>
+
+<br/>
+
+여기서는 같은 위치에서 서로 다른 컴포넌트 타입을 전환한다. 처음에 `<div>`의 첫 번째 자식에는 `Counter`가 있었습니다. 하지만 `p`를 넣었을 때 React는 UI 트리에서 카운터를 제거하고 그 상태를 파괴했습니다.
+<br/>
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_diff_pt1.png&w=1920&q=75)
+<br/>
+`Counter`가 `p`로 변경되면 `Counter`가 삭제되고 `p`가 추가됩니다.
+<br/>
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_diff_pt2.png&w=1920&q=75)
+<br/>
+다시 전환하면 `p`가 삭제되고 `Counter`가 추가됩니다.
+<br/>
+
+또한, 같은 위치에 다른 컴포넌트를 렌더링하면 전체 하위 트리의 상태가 재설정된다. 어떻게 작동하는지 확인하려면 카운터를 증가시킨 다음 체크 박스를 선택해봐라.
+
+<br/>
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function App() {
+  const [isFancy, setIsFancy] = useState(false);
+  return (
+    <div>
+      {isFancy ? (
+        <div>
+          <Counter isFancy={true} /> 
+        </div>
+      ) : (
+        <section>
+          <Counter isFancy={false} />
+        </section>
+      )}
+      <label>
+        <input
+          type="checkbox"
+          checked={isFancy}
+          onChange={e => {
+            setIsFancy(e.target.checked)
+          }}
+        />
+        Use fancy styling
+      </label>
+    </div>
+  );
+}
+
+function Counter({ isFancy }) {
+  const [score, setScore] = useState(0);
+  const [hover, setHover] = useState(false);
+
+  let className = 'counter';
+  if (hover) {
+    className += ' hover';
+  }
+  if (isFancy) {
+    className += ' fancy';
+  }
+
+  return (
+    <div
+      className={className}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => setHover(false)}
+    >
+      <h1>{score}</h1>
+      <button onClick={() => setScore(score + 1)}>
+        Add one
+      </button>
+    </div>
+  );
+}`}
+</CodeBlock>
+
+<Counter5/>
+
+체크 박스를 클릭하면 카운터 상태가 리셋된다. `Counter`를 렌더링하더라도 `div`의 첫 번째 자식은 `div`에서 `section`으로 변경됩니다. 자식 `div`가 DOM에서 제거되면 그 아래의 전체 트리(`Counter` 및 해당 상태 포함)도 함께 제거됩니다.
+
+<br/>
+
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_diff_same_pt1.png&w=1920&q=75)
+
+<br/>
+
+`section`이 `div`로 변경되면 `section`이 삭제되고 새 `div`가 추가됩니다.
+
+<br/>
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_diff_same_pt2.png&w=1920&q=75)
+
+<br/>
+
+다시 전환하면 `div`가 삭제되고 새 `section`이 추가됩니다.
+
+<br/>
+
+재렌더링 사이에 상태를 유지하려면 트리의 구조가 한 렌더링에서 다른 렌더링으로 "일치" 해야 한다. 구조가 다르면 리액트는 컴포넌트를 트리에서 제거할 때 state를 파괴하기 때문이다.
+
+- - -
+<Pitfall>
+컴포넌트 함수 정의를 중첩해서는 안 되는 이유이다.
+
+여기서는 `MyTextField` 컴포넌트 함수가 `MyComponent` 안에 정의되어 있다:
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function MyComponent() {
+  const [counter, setCounter] = useState(0);
+
+  function MyTextField() {
+    const [text, setText] = useState('');
+
+    return (
+      <input
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+    );
+  }
+
+  return (
+    <>
+      <MyTextField />
+      <button onClick={() => {
+        setCounter(counter + 1)
+      }}>Clicked {counter} times</button>
+    </>
+  );
+}`}
+</CodeBlock>
+
+<MyComponent/>
+
+<br/>
+버튼을 클릭할 때마다, input state는 사라진다.
+
+이는 다른 `MyTextField` 함수가 `MyComponent`가 렌더링될 때마다 생성되기 때문이다,
+
+너는 같은 위치에서 다른 컴포넌트를 렌더링하고 있는 것이다, 그래서 리액트는 모든 state들을 리셋하고 있다. 이는 버그와 성능 문제로 이어질 수 있다. 이러한 문제를 방지하기 위해서는, 함수 컴포넌트를 항상 최상위 레벨에서 정의해야 한다,  그리고 그 정의를 중첩하지 마라.
+</Pitfall>
+
+- - - 
+
+## 동일한 위치에서 상태 리셋
+
+기본적으로 React는 컴포넌트가 같은 위치에 있는 동안 컴포넌트의 상태를 보존합니다. 일반적으로 이것은 사용자가 원하는 것이므로 기본 동작으로 의미가 있습니다. 하지만 때로는 컴포넌트의 상태를 리셋하고 싶을 때가 있습니다.
+
+<br/>
+두 명의 플레이어가 각 턴 동안 점수를 추적할 수 있는 이 앱을 예로 들어보겠습니다:
+
+<br/>
+현재, 플레이어를 변경하면 점수가 보존된다. 두 카운터는 같은 위치에 표시되므로 리액트는 `person` prop이 변경된 동일한 `Counter`로 간주한다. 
+
+<Counter6/>
+
+하지만 개념적으로 이 앱에서는 두 개의 별도 카운터가 있어야 합니다. UI에서 같은 위치에 표시될 수도 있지만 하나는 Taylor의 카운터이고 다른 하나는 Sarah의 카운터입니다.
+
+<br/>
+
+플레이어를 전환할 때 상태를 리셋하는 방법에는 두 가지가 있다.
+
+1. 컴포넌트를 다른 위치에 렌더링하기
+2. 각 컴포넌트에 `key`로 명시적인 식별자를 부여하기 
+
+### 1. 컴포넌트를 다른 위치에 렌더링하기
+
+이 두 카운터를 독립적으로 만들려면 두 개의 다른 위치에 렌더링하면 됩니다:
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Scoreboard() {
+  const [isPlayerA, setIsPlayerA] = useState(true);
+  return (
+    <div>
+      {isPlayerA &&
+        <Counter person="Taylor" />
+      }
+      {!isPlayerA &&
+        <Counter person="Sarah" />
+      }
+      <button onClick={() => {
+        setIsPlayerA(!isPlayerA);
+      }}>
+        Next player!
+      </button>
+    </div>
+  );
+}
+
+function Counter({ person }) {
+  const [score, setScore] = useState(0);
+  const [hover, setHover] = useState(false);
+
+  let className = 'counter';
+  if (hover) {
+    className += ' hover';
+  }
+
+  return (
+    <div
+      className={className}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => setHover(false)}
+    >
+      <h1>{person}'s score: {score}</h1>
+      <button onClick={() => setScore(score + 1)}>
+        Add one
+      </button>
+    </div>
+  );
+}
+`}
+</CodeBlock>
+
+<Counter7/>
+
+<br/>
+
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_diff_position_p1.png&w=1080&q=75)
+
+- Initial State
+  - 처음에는 isPlayerA가 참입니다. 따라서 첫 번째 위치에는 카운터 상태가 포함되고 두 번째 위치는 비어 있습니다.
+
+<br/>
+
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpres∫erving_state_diff_position_p2.png&w=1080&q=75)
+
+- "Next player!" 버튼을 클릭
+  - "Next player!" 버튼을 클릭하면 첫 번째 위치는 지워지지만 두 번째 위치에는 이제 카운터가 포함됩니다.
+
+<br/>
+
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpreserving_state_diff_position_p3.png&w=1080&q=75)
+
+- "Next player!" 버튼을 다시 클릭
+
+<br/>
+
+
+각 카운터의 상태는 DOM에서 제거될 때마다 파괴된다. 이것이 당신이 버튼을 클릭할 때마다 상태가 리셋되는 이유입니다.
+
+<br/>
+
+이 솔루션은 같은 장소에 렌더링된 적은 수의 독립적인 컴포넌트만 있을 때 편리합니다.
+
+이 예에서는 두 개만 있으므로 JSX에서 둘 다 별도로 렌더링하는 것이 번거롭지 않습니다.
+- - -
+
+### 2. 각 컴포넌트에 `key`로 명시적인 식별자를 부여하기 
