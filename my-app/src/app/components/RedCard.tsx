@@ -3,7 +3,7 @@ import { Card, CardBody, Text, Box } from '@chakra-ui/react';
 
 interface Props {
     children: any;
-    title: string;
+    title?: string;
 }
 
 export const RedCard = ({ children, title }: Props) => (
@@ -11,7 +11,7 @@ export const RedCard = ({ children, title }: Props) => (
         <CardBody>
             <Box mb={2}>
                 <Text fontSize='lg' as='b' color='red.600'>
-                    🚨 {title}
+                    🚨 {title ? title : '경고'}
                 </Text>
             </Box>
             {children}
