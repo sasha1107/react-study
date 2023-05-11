@@ -443,6 +443,352 @@ export default function Form() {
 </DeepDive>
 
 - - -
+
+## 중첩된 객체를 업데이트
+
+다음과 같은 중첩된 객체 구조를 생각해봐라:
+
+
 <CodeBlock>
-{``}
+{`const [person, setPerson] = useState({
+  name: 'Niki de Saint Phalle',
+  artwork: {
+    title: 'Blue Nana',
+    city: 'Hamburg',
+    image: 'https://i.imgur.com/Sd1AgUOm.jpg',
+  }
+});`}
 </CodeBlock>
+
+`person.artwork.city`를 업데이트하고 싶다면, mutation을 사용하여 업데이트하는 방법이 명확합니다:
+
+
+<CodeBlock>
+{`person.artwork.city = 'New Delhi';`}
+</CodeBlock>
+
+하지만 리액트에서는 상태를 불변으로 취급한다. `city`를 변경하려면 먼저 새로운 `artwork` 객체(이전 `artwork` 객체의 복사본)를 만들고, 그 새로운 `artwork` 객체를 가리키는 새로운 `person` 객체도 생성해야 한다.
+
+<CodeBlock>
+{`const nextArtwork = { ...person.artwork, city: 'New Delhi' };
+  const nextPerson = { ...person, artwork: nextArtwork };
+  setPerson(nextPerson);`}
+</CodeBlock>
+
+혹은 단일 함수 호출로 작성할 수도 있다.
+
+<CodeBlock>
+{`setPerson({
+  ...person, // Copy other fields
+  artwork: { // but replace the artwork
+    ...person.artwork, // with the same one
+    city: 'New Delhi' // but in New Delhi!
+  }
+});`}
+</CodeBlock>
+
+약간 장황해지긴하지만, 대부분의 경우 잘 작동한다.
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Form() {
+  const [person, setPerson] = useState({
+    name: 'Niki de Saint Phalle',
+    artwork: {
+      title: 'Blue Nana',
+      city: 'Hamburg',
+      image: 'https://i.imgur.com/Sd1AgUOm.jpg',
+    }
+  });
+
+  function handleNameChange(e) {
+    setPerson({
+      ...person,
+      name: e.target.value
+    });
+  }
+
+  function handleTitleChange(e) {
+    setPerson({
+      ...person,
+      artwork: {
+        ...person.artwork,
+        title: e.target.value
+      }
+    });
+  }
+
+  function handleCityChange(e) {
+    setPerson({
+      ...person,
+      artwork: {
+        ...person.artwork,
+        city: e.target.value
+      }
+    });
+  }
+
+  function handleImageChange(e) {
+    setPerson({
+      ...person,
+      artwork: {
+        ...person.artwork,
+        image: e.target.value
+      }
+    });
+  }
+
+  return (
+    <>
+      <label>
+        Name:
+        <input
+          value={person.name}
+          onChange={handleNameChange}
+        />
+      </label>
+      <label>
+        Title:
+        <input
+          value={person.artwork.title}
+          onChange={handleTitleChange}
+        />
+      </label>
+      <label>
+        City:
+        <input
+          value={person.artwork.city}
+          onChange={handleCityChange}
+        />
+      </label>
+      <label>
+        Image:
+        <input
+          value={person.artwork.image}
+          onChange={handleImageChange}
+        />
+      </label>
+      <p>
+        <i>{person.artwork.title}</i>
+        {' by '}
+        {person.name}
+        <br />
+        (located in {person.artwork.city})
+      </p>
+      <img 
+        src={person.artwork.image} 
+        alt={person.artwork.title}
+      />
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+<DeepDive>
+### 객체는 실제로 중첩되지 않음
+
+이왜 같은 객체는 코드에서 "중첩"되어 나타난다:
+
+
+
+<CodeBlock>
+{`let obj = {
+  name: 'Niki de Saint Phalle',
+  artwork: {
+    title: 'Blue Nana',
+    city: 'Hamburg',
+    image: 'https://i.imgur.com/Sd1AgUOm.jpg',
+  }
+};`}
+</CodeBlock>
+
+그러나 "중첩"은 객체의 동작 방식을 생각하는 부정확한 방식이다. 코드가 실행될 때, "중첩된" 객체 같은 것은 존재하지 않는다. 실제로는 서로 다른 두개의 객체를 보고 있는 것이다
+
+<CodeBlock>
+{`let obj1 = {
+  title: 'Blue Nana',
+  city: 'Hamburg',
+  image: 'https://i.imgur.com/Sd1AgUOm.jpg',
+};
+
+let obj2 = {
+  name: 'Niki de Saint Phalle',
+  artwork: obj1
+};`}
+</CodeBlock>
+
+`obj1`은 `obj2`의 내부에 있지 않다. 예를 들어 `obj3`도 `obj1`을 가리킬 수 있다.
+
+
+<CodeBlock>
+{`let obj1 = {
+  title: 'Blue Nana',
+  city: 'Hamburg',
+  image: 'https://i.imgur.com/Sd1AgUOm.jpg',
+};
+
+let obj2 = {
+  name: 'Niki de Saint Phalle',
+  artwork: obj1
+};
+
+let obj3 = {
+  name: 'Copycat',
+  artwork: obj1
+};`}
+</CodeBlock>
+
+`obj3.artwork.city`를 변경하면, `obj2.artwork.city`와 `obj1.city` 모두에 영향을 미친다.
+
+`obj3.artwork`, `obj2.artwork`, `obj1`이 동일한 객체이기 때문이다.
+
+객체를 '중첩된' 객체라고 생각하면 이 점을 이해하기 어렵다.
+
+대신 프로퍼티를 사용하여 서로를 '가리키는' 별도의 객체이다.
+</DeepDive>
+
+- - -
+
+## Immer로 간결한 업데이트 로직 작성
+
+상태가 깊이 중첩되어 있는 경우, 플랫화 하길 원할 것이다. 하지만 상태 구조를 변경하고 싶지 않다면, 중첩 스프레드보다 지름길을 선호할 수 있다. Immer는 문법을 mutating 하고, 복사본 생성을 처리하여 편리하게 작성할 수 있게 해주는 인기 라이브러리이다. 
+
+Immer를 사용하면 작성하는 코드가 "규칙을 위반하고" 객체를 mutating 하는 것처럼 보인다.
+
+<CodeBlock>
+{`updatePerson(draft => {
+  draft.artwork.city = 'Lagos';
+});`}
+</CodeBlock>
+
+하지만 일반적인 mutation과 달리, 이는 과거 상태를 덮어쓰지 않는다.
+
+<DeepDive>
+### Immer는 어떻게 작동하는가?
+
+Immer가 제공하는 `draft는 특수한 유형의 객체로, Proxy라고 불리며, 사용자가 하는 작업을 "기록"한다.
+그렇기 때문에 원하는 만큼 자유롭게 수정할 수 있다. Immer는 `draft`에서 어떤 부분이 변경되었는지 확인한 후, 편집 내용이 포함된 완전히 새로운 객체를 생성한다.
+</DeepDive>
+
+### Immer를 사용해보려면: 
+<br/>
+1. `npm install use-immer`를 사용하여 Immer를 dependency에 추가
+2. `import { useState } from 'react'`를 `import { useImmer } from 'use-immer'`로 대체
+<br/>
+다음은 위의 예제를 Immer로 변환한 것이다:
+<br/>
+<CodeBlock>
+{`import { useImmer } from 'use-immer';
+
+export default function Form() {
+  const [person, updatePerson] = useImmer({
+    name: 'Niki de Saint Phalle',
+    artwork: {
+      title: 'Blue Nana',
+      city: 'Hamburg',
+      image: 'https://i.imgur.com/Sd1AgUOm.jpg',
+    }
+  });
+
+  function handleNameChange(e) {
+    updatePerson(draft => {
+      draft.name = e.target.value;
+    });
+  }
+
+  function handleTitleChange(e) {
+    updatePerson(draft => {
+      draft.artwork.title = e.target.value;
+    });
+  }
+
+  function handleCityChange(e) {
+    updatePerson(draft => {
+      draft.artwork.city = e.target.value;
+    });
+  }
+
+  function handleImageChange(e) {
+    updatePerson(draft => {
+      draft.artwork.image = e.target.value;
+    });
+  }
+
+  return (
+    <>
+      <label>
+        Name:
+        <input
+          value={person.name}
+          onChange={handleNameChange}
+        />
+      </label>
+      <label>
+        Title:
+        <input
+          value={person.artwork.title}
+          onChange={handleTitleChange}
+        />
+      </label>
+      <label>
+        City:
+        <input
+          value={person.artwork.city}
+          onChange={handleCityChange}
+        />
+      </label>
+      <label>
+        Image:
+        <input
+          value={person.artwork.image}
+          onChange={handleImageChange}
+        />
+      </label>
+      <p>
+        <i>{person.artwork.title}</i>
+        {' by '}
+        {person.name}
+        <br />
+        (located in {person.artwork.city})
+      </p>
+      <img 
+        src={person.artwork.image} 
+        alt={person.artwork.title}
+      />
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+이벤트 핸들러가 얼마나 간결해졌는지 주목해라. 단일 컴포넌트에서 원하는 만큼 `useState`와 `useImmer`를 믹스앤매치하여 사용할 수 있다.  특히 상태에 중첩이 있고, 객체를 복사하면 코드가 반복되는 경우, 업데이트 핸들러를 간결하게 유지하는데 Immer는 좋은 방법이다.
+
+<DeepDive>
+### 리액트에서 state mutation을 권장하지 않는 이유는?
+
+- <b>디버깅</b>
+  - `console.log`를 사용하고 상태를 mutate하지 않으면, 과거 로그가 최근 상태 변경에 의해 가려지지 않는다. 따라서 렌더링 사이에 상태가 어떻게 변경되었는지 명확하게 확인할 수 있다. 
+- <b>최적화</b>
+  - 일반적인 리액트의 최적화 전략은 이전 props나 상태가 다음 렌더링과 동일한 경우 작업을 건너뛰는 것에 의존한다. state를 mutate하지 않는다면 변경이 있었는지 확인하는 것이 매우 빠르다. 만약 `prevObj === obj`라면, 내부에 변경된 것이 없다는 것을 확신할 수 있다.
+- <b>새로운 기능들</b>
+  - 우리가 만들고 있는 리액트의 새로운 기능들은 상태를 스냅샷처럼 취급하는 것에 의존한다. 과거 버전의 state를 mutating 하는 경우, 새로운 기능을 사용하지 못할 수도 있다.
+- <b>요구 사항 변경</b>
+  - 일부 어플리케이션 기능들(Undo-Redo, 변경 내역 표시, form 양식 리셋 등)은 아무것도 mutate 되지 않은 상태에서 더 쉽게 수행할 수 있다. 과거의 상태 복사본을 메모리에 보관하고 필요할 때 재사용할 수 있기 때문이다. mutation 접근 방식으로 접근하면 나중에 이와 같은 기능을 추가하기 어려울 수 있다.
+- <b>더 간단한 구현</b>
+  - 리액트는 mutation에 의존하지 않기 때문에 객체에 특별한 작업을 할 필요가 없다. 많은 "reactive" 솔루션처럼 프로퍼치를 가로채거나(하이재킹), 항상 프록시로 래핑하거나, 초기화할 때 다른 작업을 할 필요가 없다. 이것이 바로 리액트가 추가적인 성능이나 정확성의 함정 없이, 아무리 큰 객체라도 state에 넣을 수 있는 이유이기도 하다.
+
+<br/>
+실제로는 React에서 돌연변이 상태로 "탈출"할 수 있지만, 이 접근 방식을 염두에 두고 개발된 새로운 React 기능을 사용할 수 있도록 그렇게 하지 않는 것이 좋다. 미래의 기여자들과 미래의 나도 고마워할 것이다.
+</DeepDive>
+
+# 요약
+- 리액트의 모든 state는 불변으로 취급해라.
+- state에 객체를 저장하고, mutation하면 렌더링이 트리거 되지 않고 이전 렌더링의 "스냅샷"의 상태가 변경된다.
+- 객체를 mutating 하는 대신 새 버전을 생성하고 setState하여 리렌더링을 트리거해라.
+- 객체 스프레드 구문을 사용하려 객체의 복사본을 만들 수 있다.
+  - `{...obj, something: 'newValue'}`
+- 스프레드 구문은 1 레벨 깊이만 복사하는 얕은 구문이다.
+- 중첩된 객체를 업데이트하려면 업데이트 하려는 위치에서 최상위까지 복사본을 만들어야 한다.
+- 반복적인 코드를 줄이려면, Immer를 사용해라
