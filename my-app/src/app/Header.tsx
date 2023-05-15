@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
+import Link from 'next/link';
 import {
     Drawer,
     DrawerBody,
@@ -15,7 +16,7 @@ import {
 import Logo from '@assets/react.svg';
 import { useDisclosure } from '@chakra-ui/react';
 import { NavbarContents } from './Navbar';
-import { HamburgerIcon } from '@chakra-ui/icons'
+import { HamburgerIcon } from '@chakra-ui/icons';
 
 export default function Header() {
     const { isOpen, onOpen, onClose } = useDisclosure();
@@ -28,10 +29,16 @@ export default function Header() {
                 className='inline animate-bounce  hover:animate-ping transition'
             />
             <Text fontSize={'xl'} className='text-[#00D8FF]'>
-                정수현의 React Beta
+                <Link style={{ textDecoration: 'none' }} href='/'>
+                    정수현의 React Beta
+                </Link>
             </Text>
-            <div ref={btnRef} onClick={onOpen} className='flex items-center justify-end flex-grow md:hidden'>
-                <HamburgerIcon color='gray.50' w={6} h={6}/>
+            <div
+                ref={btnRef}
+                onClick={onOpen}
+                className='flex items-center justify-end flex-grow md:hidden'
+            >
+                <HamburgerIcon color='gray.50' w={6} h={6} />
             </div>
             <Drawer
                 isOpen={isOpen}
@@ -42,18 +49,11 @@ export default function Header() {
                 <DrawerOverlay />
                 <DrawerContent>
                     <DrawerCloseButton />
-                    <DrawerHeader>Create your account</DrawerHeader>
+                    <DrawerHeader>목차</DrawerHeader>
 
                     <DrawerBody>
-                        <NavbarContents/>
+                        <NavbarContents />
                     </DrawerBody>
-
-                    {/* <DrawerFooter>
-                        <Button variant='outline' mr={3} onClick={onClose}>
-                            Cancel
-                        </Button>
-                        <Button colorScheme='blue'>Save</Button>
-                    </DrawerFooter> */}
                 </DrawerContent>
             </Drawer>
         </div>
