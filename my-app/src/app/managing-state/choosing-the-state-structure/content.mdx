@@ -5,4 +5,320 @@ import { Pitfall } from '@app/components/Pitfall';
 import { RedCard } from '@app/components/RedCard';
 import { WhiteCard } from '@app/components/WhiteCard';
 
-# Title
+# state 구조 선택
+
+state를 잘 구조화하면 차이(수정과 디버깅이 편한 컴포넌트 - 버그가 끊임없이 발생하는 컴포넌트)를 만들 수 있다. 다음은  state를 구조화할 때 고려해야 할 몇 가지 팁이다.
+
+<br/>
+
+<WhiteCard title='You will learn'>
+- 단일 상태 변수 vs 다중 상태 변수를 사용해야 하는 경우
+- 상태 구성 수 피해야 할 사항
+- 상태 구조와 관련된 일반적인 이슈를 해결하는 방법
+</WhiteCard>
+
+<br/>
+
+- - -
+
+## 상태 구조화 원칙
+
+어떤 state를 가지는 컴포넌트를 작성할 때는, 얼마나 많은 상태 변수를 사용할지, 데이터의 모양은 어떻게 할지에 대해 선택해야 한다. suboptional state 구조를 사용하고도 올바른 프로그램을 작성할 수 있지만, 더 나은 선택을 할 수 있도록 하는 몇 가지 원칙이 있다.
+
+<br/>
+
+1. <b>관련 상태를 그룹화</b>
+    - 항상 두 개 이상의 상태 변수를 동시에 업데이트하는 경우, 단일 상태 변수를 병합하는 것을 고려해라
+2. <b>상태의 모순을 피해라. (Avoid contradictions in state)</b>
+    - 여러 개의 상태가 서로 모순되거나, "불일치(disagree)"할 수 있는 방식으로 상태를 구성하면 실수가 발생할 여지가 있다. 
+3. <b>중복 상태 방지(Avoid redundant state)</b>
+    - 만약 렌더링 중에 컴포넌트의 props나 기존 state 변수로부터 어떤 정보를 계산할 수 있다면, 해당 정보를 해당 컴포넌트의 state에 넣지 말아야 한다.
+4. <b>상태 중복을 피해라.(Avoid duplication)</b>
+    - 동일한 데이터가 여러 상태 변수 간에 중복되거나, 중첩된 객체 내에 중복되면, 동기화된 상태를 유지하기가 어렵다. 가능하면 중복을 피해라.
+5. <b>깊게 중첩된 상태는 피해라.</b>
+    - 깊게 계층화된 상태는 업데이트하기가 쉽지 않다. 가능하면 상태를 평평한 방식으로 구성하는 것이 좋다.
+
+<br/>
+
+이러한 원칙의 목표는 실수 없이 상태를 쉽게 업데이트할 수 있도록 하는 것이다. state에서 redundant 와 duplicate data를 제거하면, 모든 데이터가 동기화 상태를 유지하는데 도움이 된다. 이는 데이터베이스 엔지니어가 버그 발생 가능성을 줄이기 위해 데이터베이스 구조를 "정규화"하는 것과 유사하다. 알버트 아인슈타일의 말을 빌리자면, "상태를 최대한 단순하게 만들어라 - 하지만 no simpler"
+
+<br/>
+
+이제 이러한 원칙이 실제로 어떻게 적용되는지 살펴보자.
+
+- - -
+
+## 관련 상태 그룹화
+
+single state를 사용할지  multiple state를 사용할지 고민할 때가 있다. 
+
+- multiple state
+    <CodeBlock>
+    {`const [x, setX] = useState(0);
+   const [y, setY] = useState(0);`}
+    </CodeBlock>
+- single state
+    <CodeBlock>
+    {`const [position, setPosition] = useState({ x: 0, y: 0 });`}
+    </CodeBlock>
+
+<br/>
+
+기술적으로는, 이 두가지 접근 방식을 모두 사용할 수 있다. 하지만 두 개의 상태 변수가 항상 함께 변경되는 경우에는 하나의 상태 변수로 통합하는 것이 좋다. 그러면 항상 동기화 상태를 유지하는 것을 잊지 않을 수 있다. 
+이 예체에서처럼 - 커서를 움직이면 빨간색 점의 좌표가 모두 업데이트 되는 예제
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function MovingDot() {
+  const [position, setPosition] = useState({
+    x: 0,
+    y: 0
+  });
+  return (
+    <div
+      onPointerMove={e => {
+        setPosition({
+          x: e.clientX,
+          y: e.clientY
+        });
+      }}
+      style={{
+        position: 'relative',
+        width: '100vw',
+        height: '100vh',
+      }}>
+      <div style={{
+        position: 'absolute',
+        backgroundColor: 'red',
+        borderRadius: '50%',
+        transform: 'translate($ {position.x}px, $ {position.y}px)',
+        left: -10,
+        top: -10,
+        width: 20,
+        height: 20,
+      }} />
+    </div>
+  )
+}
+`}
+</CodeBlock>
+
+데이터를 객체나 배열로 그룹화하는 또 다른 경우: 얼마나 많은 상태가 필요한지 모를 때 
+
+예를 들어, 사용자가 사용자 정의 필드를 추가할 수 있는 form이 있을 때 유용
+
+<Pitfall>
+상태 변수가 객체인 경우, 다른 필드를 명시적으로 복사하지 않고는 그 안의 한 필드만 업데이트할 수 없다는 점을 기억해라. 예를 들어, 위 예제에서는 `setPosition({ x: 100 })`를 수행할 수 없다. 왜냐하면 `y` 프로퍼티가 없기 때문이다. `x`만 상태를 설정하려면 `setPosition({ ...position, x: 100 })`을 수행하거나 두 개의 상태 변수로 분할하여 `setX(100)`을 수행해야 한다.  
+</Pitfall>
+
+- - -
+
+## 상태의 모순을 피해라.
+
+다음은 `inSending`, `isSent` 상태 변수가 있는 호텔 피드백 form이다.
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function FeedbackForm() {
+  const [text, setText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [isSent, setIsSent] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setIsSending(true);
+    await sendMessage(text);
+    setIsSending(false);
+    setIsSent(true);
+  }
+
+  if (isSent) {
+    return <h1>Thanks for feedback!</h1>
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <p>How was your stay at The Prancing Pony?</p>
+      <textarea
+        disabled={isSending}
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+      <br />
+      <button
+        disabled={isSending}
+        type="submit"
+      >
+        Send
+      </button>
+      {isSending && <p>Sending...</p>}
+    </form>
+  );
+}
+
+// Pretend to send a message.
+function sendMessage(text) {
+  return new Promise(resolve => {
+    setTimeout(resolve, 2000);
+  });
+}
+`}
+</CodeBlock>
+
+이 코드는 작동하지만, "불가능한" 상태에 대한 문을 열어두는 것이다. 예를 들어 `setIsSent` 와 `setIsSending`을 함께 호출하는 것을 잊어버리면 `setIsSent`와 `setIsSending`가 동시에 true가 되는 상황이 발생할 수 있다. 컴포넌트가 복잡할수록 어떤 일이 발생했는지 파악하기가 더 어려워진다.
+
+<br/>
+
+`setIsSent`와 `setIsSending`는 동시에 `true`가 되어서는 안되므로 세 가지 유효한 상태 중 하나를 취할 수 있는 하나의 상태 변수로 대체하는 것이 좋다: 
+
+<CodeBlock>
+{`const [status, setStatus] = useState<'typing' | 'sending' | 'sent'>('typing')`}
+</CodeBlock>
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function FeedbackForm() {
+  const [text, setText] = useState('');
+  const [status, setStatus] = useState('typing');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setStatus('sending');
+    await sendMessage(text);
+    setStatus('sent');
+  }
+
+  const isSending = status === 'sending';
+  const isSent = status === 'sent';
+
+  if (isSent) {
+    return <h1>Thanks for feedback!</h1>
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <p>How was your stay at The Prancing Pony?</p>
+      <textarea
+        disabled={isSending}
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+      <br />
+      <button
+        disabled={isSending}
+        type="submit"
+      >
+        Send
+      </button>
+      {isSending && <p>Sending...</p>}
+    </form>
+  );
+}
+
+// Pretend to send a message.
+function sendMessage(text) {
+  return new Promise(resolve => {
+    setTimeout(resolve, 2000);
+  });
+}
+`}
+</CodeBlock>
+
+
+가독성을 위해 일부 상수를 선언할 수도 있습니다.
+
+<CodeBlock>
+{`const isSending = status === 'sending';
+const isSent = status === 'sent';`}
+</CodeBlock>
+
+상태 변수가 이니므로, 서로 동기화되지 않을까 걱정할 필요가 없다.
+
+- - -
+
+## redundant state를 피해라
+
+렌더링 중에 컴포넌트의  props나 기존 상태 변수에서 일부 정보를 계산할 수 있는 경우 해당 정보를 해당 컴포넌트의 상태에 넣지 않아야 한다.
+
+
+<br/>
+
+예를 들어, 이 form을 봐라. 이 form 은 작동하지만 중복 상태를 찾을 수 있나요?
+
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Form() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [fullName, setFullName] = useState('');
+
+  function handleFirstNameChange(e) {
+    setFirstName(e.target.value);
+    setFullName(e.target.value + ' ' + lastName);
+  }
+
+  function handleLastNameChange(e) {
+    setLastName(e.target.value);
+    setFullName(firstName + ' ' + e.target.value);
+  }
+
+  return (
+    <>
+      <h2>Let’s check you in</h2>
+      <label>
+        First name:{' '}
+        <input
+          value={firstName}
+          onChange={handleFirstNameChange}
+        />
+      </label>
+      <label>
+        Last name:{' '}
+        <input
+          value={lastName}
+          onChange={handleLastNameChange}
+        />
+      </label>
+      <p>
+        Your ticket will be issued to: <b>{fullName}</b>
+      </p>
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+이 form에는 세 가지 상태 변수가 있다: `firstName`, `lastName`, `fullName`
+
+<br/>
+하지만, `fullName`은 중복된다. 렌더링 중에 언제든지 `firstName`과 `lastName`에서 `fullName`을 구할 수 있으므로 state에서 제거해라.
+
+<CodeBlock>
+{`const [firstName, setFirstName] = useState('');
+ const [lastName, setLastName] = useState('');
+
+ const fullName = firstName + ' ' + lastName;`}
+</CodeBlock>
+
+여기서 `fullName`은 상태 변수가 이니다. 대신, 렌더링 중에 계산된다.
+
+<br/>
+
+따라서, change 핸들러는 이를 업데이트하기 위해 특별한 작업을 수행할 필요가 없다. `setFirstName` 또는 `setLastName`을 호출하면 다시 렌더링이 트리거되고 다음 `fullName`이 새 데이터에서 계산된다.
+
+<DeepDive>
+### props를 상태 그대로 미러링하지 않기
+
+redundant state의 일반적인 예는 다음과 같은 코드이다:
+
+<CodeBlock>
+{`function Message({ messageColor }) {
+ const [color, setColor] = useState(messageColor);`}
+</CodeBlock>
+
+</DeepDive>
