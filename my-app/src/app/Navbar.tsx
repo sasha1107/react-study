@@ -254,11 +254,78 @@ export const NavbarContents = ()=> {
                         <AccordionIcon />
                     </AccordionButton>
                     <AccordionPanel pb={4}>
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-                        sed do eiusmod tempor incididunt ut labore et dolore
-                        magna aliqua. Ut enim ad minim veniam, quis nostrud
-                        exercitation ullamco laboris nisi ut aliquip ex ea
-                        commodo consequat.
+                    <Link href='../../escape-hatches/referencing-values-with-refs'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                Referencing Values with Refs
+                            </Text>
+                    </Link>
+                    <Link href='../../escape-hatches/manipulating-the-dom-with-refs'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                Manipulating the DOM with Refs
+                            </Text>
+                    </Link>
+                    <Link href='../../escape-hatches/synchronizing-with-effects'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                Synchronizing with Effects
+                            </Text>
+                    </Link>
+                    <Link href='../../escape-hatches/you-might-not-need-an-effect'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                You Might Not Need an Effect
+                            </Text>
+                    </Link>
+                    <Link href='../../escape-hatches/lifecycle-of-reactive-effects'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                Lifecycle of Reactive Effects
+                            </Text>
+                    </Link>
+                    <Link href='../../escape-hatches/separating-events-from-effects'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                Separating Events from Effects
+                            </Text>
+                    </Link>
+                    <Link href='../../escape-hatches/removing-effect-dependencies'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                Removing Effect Dependencies
+                            </Text>
+                    </Link>
+                    <Link href='../../escape-hatches/reusing-logic-with-custom-hooks'>
+                            <Text
+                                color='gray.500'
+                                fontSize={'sm'}
+                                _hover={{ color: 'cyan.600' }}
+                            >
+                                Reusing Logic with Custom Hooks
+                            </Text>
+                    </Link>
                     </AccordionPanel>
                 </AccordionItem>
 
