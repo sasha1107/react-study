@@ -1,0 +1,199 @@
+import { DeepDive } from '@app/components/DeepDive';
+import { Highlight } from '@app/components/Highlight';
+import { CodeBlock } from '@app/components/CodeBlock';
+import { Pitfall } from '@app/components/Pitfall';
+import { RedCard } from '@app/components/RedCard';
+import { WhiteCard } from '@app/components/WhiteCard';
+import { ColorCard } from '@app/components/ColorCard';
+import VideoPlayerApp from './VideoPlayer';
+
+
+# Effects와 동기화
+
+일부 컴포넌트는 외부 시스템과 동기화해야 한다. 예를 들어, 리액트 상태에 따라 비리액트 컴포넌트를 제어하거나, 서버 연결을 설정하거나, 컴포넌트가 화면에 나타날 떄 분석 로그를 전송하고 싶을 수도 있다. Effects를 사용하면 렌더링 후 일부 코드를 실행하여 컴포넌트를 리액트 외부의 시스템과 동기화할 수 있다. 
+
+<br/>
+
+<WhiteCard title='You will learn'>
+- Effects란?
+- Effects가 events와 어떻게 다른지
+- 컴포넌트에서 Effect를 정의하는 방법
+- 불필요한 Effect 재 실행을 스킵하는 방법
+- 개발 단계에서 Effect가 두 번 실행되는 이유와 해결 방법
+</WhiteCard>
+
+- - -
+
+## Effects란 무엇이며, 이벤트와 어떻게 다른가?
+
+Effects에 들어가기 전에, 리액트 컴포넌트 내부에 있는 두 가지 유형의 로직에 익숙해져야 한다.
+
+### 렌더링 코드
+([Describing the UI](https://react-study-mauve.vercel.app/describing-the-ui/your-first-component)에서 소개)
+
+렌더링 코드는 컴포넌트의 최상위 레벨에 위치한다. 여기에서 props와 state를 가져와서, 변형하고, 화면에 표시할 JSX를 반환한다. 렌더링 코드는 반드시 순수해야 한다. 수학 공식초롬 결과만 계산하고, 다른 작업을 수행하지 않아야 한다.
+
+
+### 이벤트 핸들러
+([Adding Interactivity](https://react-study-mauve.vercel.app/adding-interactivity/responding-to-events)에서 소개)
+
+이벤트 핸들러는 컴포넌트 내부에 중첩된 함수로, 단순히 계산만 하는 것이 아니라 작업을 수행한다. 이벤트 핸들러는 입력 필드를 업데이트하거나, HTTP POST 요청을 제출하거나, 사용자를 다른 화면으로 navigate할 수 있다.  이벤트 핸들러에는 특정 사용자의 액션(버튼 클릭 또는 타이핑)으로 인해 발생하는 "side effects"가 포함된다.
+
+<br/>
+
+떄로는 이것만으로는 충분하지 않다. 화면애 나타날 때마다 채팅 서버에 연결해야 하는 `ChatRoom` 컴포넌트를 생각해봐라.  서버에 연결하는 것은 순수한 계산이 아니므로(이것은 side effect이다), 렌더링 중에 발생할 수 없다. 그러나 클릭과 같은 특정 이벤트 하나만 있어도 `ChatRoom`이 표시되는 것은 아니다. 
+
+
+<br/>
+
+Effects를 사용하면 특정 이벤트가 아닌, 렌더링 자체로 인해 발생하는 부작용을 구체화할 수 있다. 채팅에서 메시지를 보내는 것은 사용자가 특정 버튼을 클릭함으로써 직접 발생하므로 이벤트에 해당한다. 그러나 서버 연결 설정은 컴포넌트가 표시되는 원인이 되는 상호작용에 관계없이 발생해야 하므로 Effect에 해당한다. Effect는 화면이 업데이트된 후 커밋이 끝날 때 실행된다. 이때는 리액트 컴포넌트를 외부 시스템(예: 네트워크 또는 서브파티 라이브러리)과 동기화하기에 좋은 시기이다.
+
+<br/>
+
+<ColorCard color='green' title='NOTE'>
+이 글에서 대문자료 표시된 `Effect`는 리액트-관련 정의, 즉 렌더링으로 인해 발생하는 부작용을 의미한다. 더 넒은 프로그래밍 개념을 지칭하기 위해서는 "side effect"라는 용어를 사용하도록 하겠다.
+</ColorCard>
+- - -
+
+## Effect가 필요하지 않을 수도 있다.
+
+컴포넌트에 Effect를 추가하는 것을 서두르지 마라. Effect는 일반적으로 리액트 코드에서 벗어나 외부 시스템과 동기화(synchronize)할 때 사용된다는 점을 명심해라. 여기에는 브라우저 API, 서드파티 위젯, 네트워크 등이 포함된다. 만약 Effect가 다른 상태를 기반으로 일부 상태만 조정한다면 Effect가 필요하지 않을 수 있다. 
+
+- - - 
+
+## Effect를 정의하는 방법
+
+Effect를 정의하려면 다음 세 가지 스텝을 따르시요:
+
+1. Effect를 정의해라
+    - 기본적으로 Effect는 렌더링될 때마다 실행된다. 
+2. Effect dependencies를 구체화 해라.
+    - 대부분의 Effect는 매번 렌더링할 때마다 실행하는 것이 아니라 필요 시에만 다시 실행해야 한다. 예를 들어 페이드-인 애니메이션은 컴포넌트가 나타날 때만 트리거되어야 한다. 채팅방 연결/연결해제는 컴포넌트가 나타났다가 사라지거나 채팅방이 변경될 때만 발생해야 한다. dependencies를 지정하여 이를 제어하는 방법을 배우게 된다. 
+3. 필요하다면, cleanup을 추가해라.
+    - 일부 Effect는 수행 중이던 작업을 중지, 실행취소 또는 정리하는 방법을 지정해야 한다. 예를 들어 "연결"에는 "연결 끊기", "구독"에는 "구독 취소", "fetch"에는 "cancel / ignore"가 필요하다. 클린업 함수를 반환하여 이를 수행하는 방법을 배우게 된다.
+
+<br/>
+
+### STEP 1: Effect를 정의해라
+
+컴포넌트 안에서 Effect를 정의하기 위해서는 React에서 `useEffect` 훅을 import 해와야 한다.
+
+<CodeBlock>
+{`import { useEffect } from 'react';`}
+</CodeBlock>
+
+그런 다음 컴포넌트의 최상위 수준에에서 `useEffect`를 호출하고 Effect 안에 코드를 넣는다.
+
+
+<CodeBlock>
+{`function MyComponent() {
+  useEffect(() => {
+    // Code here will run after *every* render
+  });
+  return <div />;
+}`}
+</CodeBlock>
+
+컴포넌트가 렌더링될 때마다 리액트는 화면을 업데이트한 다음, useEffect 내부에서 코드를 실행한다. <b>다시 말해, useEffect는 해당 렌더링이 화면에 반영될 때까지 코드 실행을 "지연(delay)" 시킨다.</b>
+
+<br/>
+
+Effect를 사용하여 외부 시스템과 동기화하는 벙봅을 살펴보자. `<VideoPlayer/>` 리액트 컴포넌트를 생각해보자. 이 컴포넌트에 `isPlaying` props를 전달하여 재생 또는 일시정지 여부를 제어하면 좋을 것이다. 
+
+<CodeBlock>
+{`<VideoPlayer isPlaying={isPlaying} />;`}
+</CodeBlock>
+
+너의 커스텀 `VideoPlayer` 컴포넌트는 built-in `<video>` 태그를 랜더링하고 있다:
+
+<CodeBlock>
+{`function VideoPlayer({ src, isPlaying }) {
+  // TODO: do something with isPlaying
+  return <video src={src} />;
+}
+`}
+</CodeBlock>
+
+하지만 브라우저 `<video>` 태그에는 `isPlaying` 프로퍼티가 없다. 이를 제어할 수 있는 유일한 방법은 DOM 요소에서 `play()`와 `pause()` 메서드를 수동으로 호출하는 것이다. 동영상이 현재 재생 중인지 알려주는 `isPlaying` props의 값을 `play()`, `pause()` 메서드의 호출과 동기화해야 한다. 
+
+<br/>
+
+먼저, `<video>` DOM 노드에 대한 ref(참조)를 가져와야 한다. 
+
+<br/>
+
+렌더링 중에 `play()`또는 `pause()`를 호출하고 싶을 수도 있지만, 이는 올바르지 않다. 
+<RedCard title='런타임 에러 코드'>
+<CodeBlock>
+{`import { useState, useRef, useEffect } from 'react';
+
+function VideoPlayer({ src, isPlaying }) {
+  const ref = useRef(null);
+
+  if (isPlaying) {
+    ref.current.play();  // Calling these while rendering isn't allowed.
+  } else {
+    ref.current.pause(); // Also, this crashes.
+  }
+
+  return <video ref={ref} src={src} loop playsInline />;
+}
+
+export default function App() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  return (
+    <>
+      <button onClick={() => setIsPlaying(!isPlaying)}>
+        {isPlaying ? 'Pause' : 'Play'}
+      </button>
+      <VideoPlayer
+        isPlaying={isPlaying}
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+      />
+    </>
+  );
+}`}
+
+</CodeBlock>
+</RedCard>
+리액트에서 렌더링은 JSX의 순수한 계산이어야 하며 DOM 수정과 같은 side effect는 포함되어서는 안되기 때문이다.
+
+<br/>
+
+게다가 `VideoPlayer`가 처음 호출될 때, 그 DOM은 아직 존재하지 않는다! 리액트는 JSX를 반환할 때까지 어떤 DOM을 생성할지 모르기 때문에 아직 `play()`나 `pause()`를 호출할 DOM 노드가 존재하지 않는다. 
+
+<br/>
+
+여기서 해결책은 `useEffect`로 side effect를 감싸서, 렌더링 계산에서 제외하는 것이다:
+
+<CodeBlock>
+{`import { useEffect, useRef } from 'react';
+
+function VideoPlayer({ src, isPlaying }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (isPlaying) {
+      ref.current.play();
+    } else {
+      ref.current.pause();
+    }
+  });
+
+  return <video ref={ref} src={src} loop playsInline />;
+}`}
+</CodeBlock>
+
+DOM 업데이트를 Effect에 래핑하면, 리액트는 화면을 먼저 업데이트 한다, 그런 다음 Effect가 실행된다. 
+
+<br/>
+
+`VideoPlayer` 컴포넌트가 렌더링될 때(첫렌더링이거나 리렌더링일 때도) 몇 가지 일이 일어난다.
+
+먼저, React가 화면을 업데이트하여 `<video>` 태그가 올바른 프로퍼티와 함께 DOM에 있는지 확인한다. 그런 다음 React가 Effect를 실행한다. 마지막으로 Effect는 `isPlaying`의 값에 따라 `play()` 또는 `pause()`를 호출한다.
+
+Play / Pause를 여러 번 누르고 동영상 플레이어가 `isPlaying` 값과 어떻게 동기화되는지 확인해보자:
+
+<WhiteCard>
+    <VideoPlayerApp/>
+</WhiteCard>
