@@ -1,12 +1,12 @@
-import { DeepDive } from '@app/components/DeepDive';
-import { Highlight } from '@app/components/Highlight';
-import { CodeBlock } from '@app/components/CodeBlock';
-import { Pitfall } from '@app/components/Pitfall';
-import { RedCard } from '@app/components/RedCard';
-import { WhiteCard } from '@app/components/WhiteCard';
-import { ColorCard } from '@app/components/ColorCard';
+import {
+  Alert,
+  AlertIcon,
+  Tabs, TabList, TabPanels, Tab, TabPanel
+} from '@chakra-ui/react'
+import { WhiteCard, ColorCard, DeepDive, Highlight, CodeBlock, Pitfall, RedCard, AlertBanner } from '@app/components';
 import VideoPlayerApp from './VideoPlayer';
-
+import VideoPlayerApp2 from './VideoPlayer2';
+import VideoPlayerApp3 from './VideoPlayer3';
 
 # Effects와 동기화
 
@@ -197,3 +197,512 @@ Play / Pause를 여러 번 누르고 동영상 플레이어가 `isPlaying` 값�
 <WhiteCard>
     <VideoPlayerApp/>
 </WhiteCard>
+
+이 예제에서, 리액트 state에 동기화한 "외부 시스템"은 browser media API 였다. 비슷한 접근 방식을 사용하여 레거시 non-React 코드(예: jQuery 플러그인)를 선언적 리액트 컴포넌트로 래핑할 수 있다. 
+
+<br/>
+
+동영상 플레이어를 제어하는 것은 실제로는 훨씬 더 복잡하다는 점에 유의해라. `play()` 호출이 실패할 수도 있고, 사용자가 내장된 브라우저 컨트롤을 사용하여 재생하거나 일시정지할 수도 있다. 이 예시는 매우 단순하고 불완전하다.
+
+<Pitfall>
+기본적으로 Effects는 렌더링할 때마다 실행된다. 그렇기 때문에 이와 같은 코드는 무한 루프를 생성한다. 
+
+<CodeBlock>
+{`const [count, setCount] = useState(0);
+useEffect(() => {
+  setCount(count + 1);
+});`}
+</CodeBlock>
+
+Effects는 렌더링의 결과로 실행된다. setting state는 렌더를 트리거한다. Effects 안에서 즉시 setting state를 실행하는 것은 전원 콘센트에 플러그를 꽂는 것과 같다. Effects를 실행하면, set state가 되고, 이는 리렌더를 유발한다. 이는 다시 Effects를 실행하고, 이는 다시 set state를 유발한다. 이는 무한 루프를 만든다.
+
+<br/>
+
+Effects는 보통 컴포넌트를 외부 시스템과 동기화해야 한다. 외부 시스템이 없고 다른 상태를 기반으로 일부 상태만 조정하려는 경우 이펙트가 필요하지 않을 수도 있다. 
+</Pitfall>
+
+- - -
+
+### STEP 2: Effect Dependencies를 구체화해라
+
+기본적으로 Effect는 매 렌더 이후마다 실행된다. 종종 이것은 사용자가 원하는 것이 아니다:
+
+<br/>
+
+- 때로는, 속도가 느릴 수 있다. 외부 시스템과의 동기화가 항상 즉각적인 것은 아니므로 꼭 필요한 경우가 아니라면 동기화를 건너뛰는 것이 좋다. 예를 들어, 키보드를 입력할 때마다 채팅 서버에 다시 연결하고 싶지는 않을 수 있다. 
+- 때로는 잘못된 경우가 있다. 예를 들어, 키보드를 입력할 때마다 컴포넌트 페이드인 애니메이션을 트리거하고 싶지 않을 수 있다. 애니메이션은 컴포넌트가 처음 나타날 때 한 번만 재생되어야 한다. 
+
+이 문제를 설명하기 위해 몇 개의 `console.log` 호출과 부모 컴포넌트의 상태를 업데이트하는 텍스트 입력이 포함된 이전 VideoPlayer 예시를 다시 살펴보자. 타이핑하면 Effect가 다시 실행되는 것을 확인할 수 있다. 
+
+<WhiteCard>
+    <CodeBlock>
+    {`import { useState, useRef, useEffect } from 'react';
+
+function VideoPlayer({ src, isPlaying } : { src : string, isPlaying : boolean }) {
+    const ref = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        if (isPlaying) {
+            console.log('Calling video.play()');
+            ref.current?.play();
+        } else {
+            console.log('Calling video.pause()');
+            ref.current?.pause();
+        }
+    });
+
+    return <video ref={ref} src={src} loop playsInline />;
+}
+
+export default function App() {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [text, setText] = useState('');
+    return (
+        <>
+            <input value={text} onChange={(e) => setText(e.target.value)} />
+            <button onClick={() => setIsPlaying(!isPlaying)} className='border-2 border-indigo-400 bg-indigo-100 hover:bg-indigo-200'>
+                {isPlaying ? 'Pause' : 'Play'}
+            </button>
+            <VideoPlayer
+                isPlaying={isPlaying}
+                src='https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+            />
+        </>
+    );
+}
+`}
+    </CodeBlock>
+    <VideoPlayerApp2/>
+</WhiteCard>
+
+useEffect의 두 번째 인수로 의존성 배열을 지정하여 리액트가 불필요하게 Effect를 다시 실행하는 것을 건너뛰도록 지시할 수 있다. dependency array를 빈 배열로 지정해보자.
+
+<CodeBlock>
+{`  useEffect(() => {
+    // ...
+  }, []);`}
+</CodeBlock>
+
+리액트 훅 useEffect에 missing dependency: `isPlaying` 경고가 표시된다. 
+
+<br/>
+<Alert status='warning'>
+    <AlertIcon />
+    React Hook useEffect has a missing dependency: 'isPlaying'. Either include it or remove the dependency array.
+</Alert>
+<br/>
+
+문제는 Effect 내부의 코드가 `isPlaying` 프로퍼티에 의존하여 수행할 작업을 결정하는데, 이 종속성이 명시적으로 선언되지 않았다는 점이다. 이 문제를 해결하려면 의존성 배열에 `isPlaying`을 추가해야 한다.
+
+<CodeBlock>
+{`  useEffect(() => {
+    if (isPlaying) { // It's used here...
+      // ...
+    } else {
+      // ...
+    }
+  }, [isPlaying]); // ...so it `}
+</CodeBlock>
+
+이제 모든 의존성이 선언되었으므로, 에러가 사라졌다. 의존성 배열로 `[isPlaying]`을 지정하면 리액트가 isPlaying이 이전 렌더링 때와 동일한 경우 Effect를 다시 실행하지 않도록 건너뛰도록 지시한다. 이렇게 변경하면 input에 타이핑해도 Effect가 다시 실행되지 않지만, Play / Pause 버튼을 클릭하면 실행된다.
+
+<WhiteCard>
+  <CodeBlock>
+  {`import { useState, useRef, useEffect } from 'react';
+
+function VideoPlayer({ src, isPlaying }: { src: string; isPlaying: boolean }) {
+    const ref = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        if (isPlaying) {
+            console.log('Calling video.play()');
+            ref.current?.play();
+        } else {
+            console.log('Calling video.pause()');
+            ref.current?.pause();
+        }
+    }, [isPlaying]);
+
+    return <video ref={ref} src={src} loop playsInline />;
+}
+
+export default function App() {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [text, setText] = useState('');
+    return (
+        <>
+            <input value={text} onChange={(e) => setText(e.target.value)} />
+            <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className='border-2 border-indigo-400 bg-indigo-100 hover:bg-indigo-200'
+            >
+                {isPlaying ? 'Pause' : 'Play'}
+            </button>
+            <VideoPlayer
+                isPlaying={isPlaying}
+                src='https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+            />
+        </>
+    );
+}
+`}
+  </CodeBlock>
+  <VideoPlayerApp3/>
+</WhiteCard>
+
+
+의존성 배열은 여러 개의 의존성을 포함할 수 있다. 리액트는 지정한 모든 종속성의 값이 이전 렌더링에서와 정확히 동일한 경우에만 Effect를 건너뛰도록 지시한다.
+
+리액트는 [`Object.is`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is) 비교를 사용하여 의존성 배열 내의 값을 비교한다. 자세한 내용은 [`useEffect` 레퍼런스](https://react.dev/reference/react/useEffect#reference)를 참조하세요.
+
+<br/>
+
+의존성을 "선택"할 수 없다는 점에 유의해라. 지정한 종속성이 이펙트 내부의 코드를 기반으로 리액트가 예상하는 것과 일치하지 않으면 lint 에러가 발생한다. 이는 코드에서 많은 버그를 잡는데 도움이 된다. 일부 코드가 다시 실행되는 것을 원하지 않는다면 해당 종속성을 "필요"로 하지 않도록 Effect 코드 자체를 편집해라. 
+
+
+<Pitfall>
+의존성 배열이 아예 없는 경우와, 빈 배열(`[]`)이 있는 경우의 동작은 다르다.
+### 매 렌더 이후에 실행
+
+<CodeBlock>
+{`useEffect(() => {
+  // This runs after every render
+});`}
+</CodeBlock>
+
+### 마운트 되었을 때만 실행
+<CodeBlock>
+{`useEffect(() => {
+  // This runs only on mount (when the component appears)
+}, []);
+`}
+</CodeBlock>
+
+### 마운트 되었을 때 + `a` 나 `b`가 최근 렌더와 비교해서 변경되었을 떄 실행
+<CodeBlock>
+{`useEffect(() => {
+  // This runs on mount *and also* if either a or b have changed since the last render
+}, [a, b]);`}
+</CodeBlock>
+
+</Pitfall>
+
+<DeepDive>
+### 의존성 배열에서 ref가 생략된 이유는?
+
+이 이펙트는 `ref`와 `isPlaying`을 모두 사용하지만 종속성으로 선언된 것은 `isPlaying` 뿐이다:
+
+<CodeBlock>
+{`function VideoPlayer({ src, isPlaying }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (isPlaying) {
+      ref.current.play();
+    } else {
+      ref.current.pause();
+    }
+  }, [isPlaying]);`}
+</CodeBlock>
+
+이는 `ref` 객체가 안정적인 아이덴티티를 가지고 있기 때문입니다: React는 모든 렌더링에서 동일한 `useRef` 호출에서 항상 동일한 객체를 얻을 수 있도록 보장합니다. 절대 변경되지 않으므로 그 자체로 Effect가 다시 실행되지 않습니다. 따라서 포함 여부는 중요하지 않습니다. 포함해도 괜찮습니다:
+
+<CodeBlock>
+{`function VideoPlayer({ src, isPlaying }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (isPlaying) {
+      ref.current.play();
+    } else {
+      ref.current.pause();
+    }
+  }, [isPlaying, ref]);`}
+</CodeBlock>
+`useState`가 반환하는 setting function도 안정된 identity를 가지므로 종속성에서 생략되는 경우가 많다. linter를 통해 오류 없이 종속성을 생략할 수 있다면, 그렇게 해도 안전하다. 
+
+<br/>
+
+항상 안정적인 의존성을 생략하면 linter가 객체가 안정적이라는 것은 "see"할 수 있을 때만 작동한다. 예를 들어, 부모 컴포넌트에서 `ref`를 전달받은 경우 의존성 배열에 이를 지정해야 한다, 하지만 부모 컴포넌트가 항상 동일한 `ref`를 전달하는지, 아니면 여러 `ref`
+중 하나를 조건부로 전달하는지 알 수 없기 때문에 이 방법이 좋다. 따라서 Effect는 전달되는 참조에 따라 달라진다. 
+</DeepDive>
+
+### STEP 3: 필요하다면 cleanup을 추가해라. 
+
+다른 예를 생각해보자. `ChatRoom` 컴포넌트를 작성하고 있다고 가정해보자. `ChatRoom` 컴포넌트는 컴포넌트가 나타날 때 채팅 서버에 연결해야 한다. `connect()` 및 `disconnect()` 메서드가 있는 객체를 반환하는 `createConnection()` API가 주어집니다. 컴포넌트가 사용자에게 표시되는 동안 어떻게 연결 상태를 유지하나요?
+
+<br/>
+
+Effect 로직을 작성하는 것으로 시작해라:
+
+<br/>
+
+<CodeBlock>
+{`useEffect(() => {
+  const connection = createConnection();
+  connection.connect();
+});`}
+</CodeBlock>
+
+매 렌더마다 채팅에 연결하는 것은 속도가 느려질 수 있으므로, 의존성 배열을 추가한다:
+
+<CodeBlock>
+{`useEffect(() => {
+  const connection = createConnection();
+  connection.connect();
+}, []);`}
+</CodeBlock>
+
+Effect 내부의 코드는 props나 state를 사용하지 않으므로, 의존성 배열은 비어있다. (`[]`). 이는 컴포넌트가 "마운트" 될 때, 즉 화면에 처음 나타날 때만 이 코드를 실행하도록 리액트에게 지시한다. 
+
+<br/>
+
+이 코드를 실행해보자:
+
+<Tabs variant='enclosed'>
+  <TabList>
+    <Tab>App.js</Tab>
+    <Tab>chat.js</Tab>
+  </TabList>
+  <TabPanels>
+    <TabPanel>
+      <CodeBlock>
+      {`import { useEffect } from 'react';
+import { createConnection } from './chat.js';
+
+export default function ChatRoom() {
+  useEffect(() => {
+    const connection = createConnection();
+    connection.connect();
+  }, []);
+  return <h1>Welcome to the chat!</h1>;
+}`}
+      </CodeBlock>
+    </TabPanel>
+    <TabPanel>
+      <CodeBlock>
+      {`export function createConnection() {
+  // A real implementation would actually connect to the server
+  return {
+    connect() {
+      console.log('✅ Connecting...');
+    },
+    disconnect() {
+      console.log('❌ Disconnected.');
+    }
+  };
+}`}
+      </CodeBlock>  
+    </TabPanel>
+  </TabPanels>
+</Tabs>
+
+<br/>
+
+이 Effect는 마운트 시에만 실행되므로 콘솔에서 `"✅ Connecting..."`이 한 번 출력될 것으로 예상할 수 있다. 그러나 콘솔을 확인하면 `"✅ Connecting..."`이 두 번 인쇄된다. 왜 이런 현상이 발생하는가?
+
+<br/>
+
+`ChatRoom` 컴포넌트가 다른 화면들이 많은 더 큰 앱의 일부라고 상상해보자. 사용자는 `ChatRoom` 페이지에서 여정을 시작한다.  컴포넌트가 마운트 되고, `connection.connect()`를 호출한다.  그리고 사용자가 다른 화면으로(예: "Setting" 페이지) 이동한다고 상상해봐라. `ChatRoom` 컴포넌트는 언마운트된다. 최종적으로, 사용 자가 뒤로(Back)을 클릭하면 `ChatRoom` 컴포넌트가 다시 마운트 된다. 이렇게 하면 두 번째 연결이 설정되지만 - 첫번째 연결은 파괴되지 않는다! 사용자가 앱을 탐색할 때 연결은 계속 쌓이게 된다. 
+
+<br/>
+이와 같은 버그는 광벙위한 수동 테스트 없이는 놓치기 쉽다. 이러한 버그를 빠르게 발견할 수 있도록 개발 단계에서 리액트는 모든 컴포넌트를 최초 마운트 직후에 한 번씩 다시 마운트 한다. 
+
+<br/>
+
+`"✅ Connecting..."` 로그를 두 번 찍히는 것은 실제 이슈를 파악하는데 도움이 된다: 
+너의 코드는 컴포넌트가 언마운트 될 때 연결을 끊지 않는다.
+
+<br/>
+
+이 문제를 해결하려면 Effect에서 cleanup 함수를 반환해라:
+
+<CodeBlock>
+{`  useEffect(() => {
+    const connection = createConnection();
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, []);
+`}
+</CodeBlock>
+
+리액트는 Effect가 다시 실행되기 전에 매번 cleanup 함수를 호출하고, 컴포넌트가 언마운트 될 때 마지막으로 한 번 더 호출한다. cleanup 함수가 실행되면 어떤 일이 일어나는지 살표보자.
+
+
+<Tabs variant='enclosed'>
+  <TabList>
+    <Tab>App.js</Tab>
+    <Tab>chat.js</Tab>
+  </TabList>
+  <TabPanels>
+    <TabPanel>
+      <CodeBlock>
+      {`import { useState, useEffect } from 'react';
+import { createConnection } from './chat.js';
+
+export default function ChatRoom() {
+  useEffect(() => {
+    const connection = createConnection();
+    connection.connect();
+    return () => connection.disconnect();
+  }, []);
+  return <h1>Welcome to the chat!</h1>;
+}`}
+      </CodeBlock>
+    </TabPanel>
+    <TabPanel>
+      <CodeBlock>
+      {`export function createConnection() {
+  // A real implementation would actually connect to the server
+  return {
+    connect() {
+      console.log('✅ Connecting...');
+    },
+    disconnect() {
+      console.log('❌ Disconnected.');
+    }
+  };
+}`}
+      </CodeBlock>  
+    </TabPanel>
+  </TabPanels>
+</Tabs>
+
+
+개발 단계에서 다음과 같은 3개의 콘솔로그가 생겼다.
+
+<br/>
+
+```
+"✅ Connecting..."
+"❌ Disconnected."
+"✅ Connecting..."
+```
+
+<br/>
+
+이것은 개발 단계에서 올바른 동작이다. 컴포넌트를 다시 마운트하면 리약트는 멀리 이동했다가 다시 돌아와도 코드가 손상되지 않는지 확인한다. 연결을 끊었다가 다시 연결하는 것은 정확히 일어나야 하는 일이다! cleanup을 잘 구현하면 `Effect를 한번 실행한 것` vs `Effect를 실행하고 cleanup하고 다시 Effect를 실행한 것` 차이에 대해 사용자가 시각적으로 느낄 수 없어야 한다. 리액트가 개발 단계에서 코드에 버그가 있는지 검사하기 때문에 connect/disconnect 호출 쌍이 추가된다. 이것은 정상적인 현상이니 없애려고 하지 마세요!
+
+<br/>
+
+프로덕션(not 개발단계)에는 `"✅ Connecting..."`이 한 번만 출력된다. 컴포넌트 remount는 cleanup이 필요한 Effect를 찾는데 도움이 되도록 개발 중에만 수행된다. 엄격 모드를 해제하여 개발 동작을 선택 해제할 수 있지만, 계속 켜두는 것이 좋다. 이를 통해 위와 같은 많은 버그를 찾을 수 있기 때문이다. 
+- - -
+
+## 개발 단계에서 Effect 발사를 두 번 처리하는 방법은 무엇인가요?
+
+리액트는 지난 예제에서와 같이 버그를 찾기 위해 개발 중에 컴포넌트를 의도적으로 다시 마운트한다. 올바른 질문은 "어떻게 Effect를 한 번 실행하는가?"가 아니라 "어떻게 Effect를 리마운팅한 후 작동하도록 수정하는가"이다. 
+
+<br/>
+
+일반적으로 정답은 cleanup function을 구현하는 것이다. cleanup 함수는 Effect가 수행 중이던 작업을 중지하거나 실행 취소해야 한다, 사용자는 `Effect를 한번 실행한 것`(프로덕션 단계에서 보이는) vs `Effect를 실행하고 cleanup하고 다시 Effect를 실행한 것`(개발단계에서 보이는)를 시각적으로 구분할 수 없어야 한다. 
+
+<br/>
+
+작성하게 될 대부분의 Effect는 아래의 일반적인 패턴 중 하나에 해당한다. 
+- non-React 위젯 제어
+- 이벤트 구독
+- 애니메이션 트리거
+- 데이터 페칭
+- 애널리틱스 전송
+- Not an Effect: 어플리케이션 초기화
+- Not an Effect: 상품 구매
+
+### non-React 위젯 제어
+
+땨땨로 리약트로 작성되지 않은 UI 위젯을 추가해야할 때가 있다. 예를 들어, 페이지에 지도 컴포넌트를 추가한다고 가정해보자. 이 컴포넌트에는 `setZoomLevel()`이라는 메소드가 있고, 리액트 코드의 `zoomLevel` 상태 변수와 줌 레벨을 동기화하고자 한다. Effect는 다음과 비슷하게 보일 것이다. 
+
+<CodeBlock>
+{`useEffect(() => {
+  const map = mapRef.current;
+  map.setZoomLevel(zoomLevel);
+}, [zoomLevel]);`}
+</CodeBlock>
+
+이 경우 cleanup이 필요하지 않다. 개발 단계에서 리액트는 Effects를 2번 호출하지만, 같은 값으로 `setZoomLevel()을 두 번 호출해도 아무 일도 일어나지 않으므로 문제가 되지 않는다. 속도가 약간 느려질 수 있지만 프로덕션에서는 불필요하게 다시 마운트되지 않으므로 문제가 되지 않는다. 
+
+<br/>
+
+일부 API는 연속으로 두 번 호출하는 것을 허용하지 않을 수 있다. 예를 들어, 빌트인 `<dialog>` 엘리먼트의 `showModal` 메서드는 두 번 호출하면 throw 된다. cleanup 함수를 구현하여 dialog를 닫도록 해라. 
+
+<CodeBlock>
+{`useEffect(() => {
+  const dialog = dialogRef.current;
+  dialog.showModal();
+  return () => dialog.close();
+}, []);`}
+</CodeBlock>
+
+개발 단계에서, Effect는 `showModal()`을 호출한 다음 -> 즉시 `close()`를 호출 다음 다시 `showModal()`을 호출한다. 이는 프로덕션에서 볼 수 있는 것처럼 `showModal()`을 한 번 호출하는 것과 동일한 시각적 동작을 갖는다. 
+
+
+### 이벤트 구독
+
+Effect가 무언가를 구독하는 경우, cleanup에서 구독을 취소해야 한다:
+
+<CodeBlock>
+{`useEffect(() => {
+  function handleScroll(e) {
+    console.log(window.scrollX, window.scrollY);
+  }
+  window.addEventListener('scroll', handleScroll);
+  return () => window.removeEventListener('scroll', handleScroll);
+}, []);`}
+</CodeBlock>
+
+개발 단계에서 Effect는 `addEventListener()`를 호출한 다음 -> 즉시 `removeEventListener()`를 호출한 다음 -> 다시 `addEventListener()`를 호출한다. 따라서 한 번에 하나의 활성화된 구독만 있을 수 있다. 이는 프로덕션 환경에서와 같이 `addEventListener()`를 한 번 호출하는 것과 동일한 사용자 시각적 동작을 갖는다.
+
+### 애니메이션 트리거
+
+Effect에 애니메이션이 적용된 경우, cleanup을 사용하면 애니메이션이 초기값으로 초기화된다:
+
+<CodeBlock>
+{`useEffect(() => {
+  const node = ref.current;
+  node.style.opacity = 1; // Trigger the animation
+  return () => {
+    node.style.opacity = 0; // Reset to the initial value
+  };
+}, []);`}
+</CodeBlock>
+
+개발 단계에서는 opacity를 `1` -> `0` -> `1`로 설정한다. 이렇게 하면 프로덕션 환경에서 직접 `1`로 설정하는 것과 동일한 사용자 시각적 상태를 갖는다. 트위닝을 지원하는 써드 파티 애니메이션 라이브러리를 사용하는 경우, cleanup 함수를 통해 타임라인을 초기 상태로 리셋해야 한다.
+
+<ColorCard color='green' title='트위닝(Tweening)이란?'>
+- 트위닝은 애니메이션의 시작과 끝 사이의 중간 값을 계산하는 것을 말한다. 
+- 시작 프레임에서 마지막 프레임의 위치 값이 나 변화를 적용하면 중간과정을 매 프레임마다 보여주는 기법
+- CSS keyframes 같은 느낌?
+</ColorCard>
+
+### 데이터 페칭
+
+Effect로 무언가를 fetch 하는 경우, cleanup 함수는 fetch를 중단하거나 결과를 무시해야 한다:
+
+<CodeBlock>
+{`useEffect(() => {
+  let ignore = false;
+
+  async function startFetching() {
+    const json = await fetchTodos(userId);
+    if (!ignore) {
+      setTodos(json);
+    }
+  }
+
+  startFetching();
+
+  return () => {
+    ignore = true;
+  };
+}, [userId]);`}
+</CodeBlock>
+
+이미 발생한 네트워크 요청을 "실행취소" 할 수는 없지만, cleanup 함수를 사용하면 더 이상 관련이 없는 fetch가 어플리케이션에 계속 영향을 미치지 않도록 할 수 있다. 
+
+
+### 애널리틱스 전송
+### Not an Effect: 어플리케이션 초기화
+### Not an Effect: 상품 구매
+- - - 
+
+## 모든 것을 종합하기
+
