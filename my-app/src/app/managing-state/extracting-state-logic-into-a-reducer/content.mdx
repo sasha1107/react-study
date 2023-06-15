@@ -1,3 +1,661 @@
 import { WhiteCard, ColorCard, DeepDive, Highlight, CodeBlock, Pitfall, RedCard, AlertBanner } from '@app/components';
+import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react'
 
-# Title
+# 상태 로직을 Reducer로 추출하기
+
+많은 상태 업데이트가 여러 이벤트 핸들러에 분산되어 있는 컴포넌트는 과부하가 걸릴 수 있다. 이러한 경우 컴포넌트 외부의 모든 상태 업데이트 로직을 리듀서라고 하는 단일 함수로 통합할 수 있다. 
+
+<WhiteCard title='You will learn'>
+
+- 리듀서 함수가 무엇인지
+- `useState`를 `useReducer`로 리팩토링하는 법
+- 언제 리듀서를 써야 하는지
+- 리듀서를 잘 작성하는 방법
+</WhiteCard>
+
+- - -
+
+## reducer로 상태 로직 통합
+
+컴포넌트가 복잡해지면 컴포넌트의 상태가 업데이트되는 다양한 방법을 한 눈에 보기가 어려워질 수 있다. 예를 들어, 아래의 `TaskApp` 컴포넌트는 `tasks` 배열을 상태로 관리하고,세가지 이벤트 핸들러를 사용하여 task를 추가, 삭제, 편집한다. 
+
+<CodeBlock>
+{`import { useState } from 'react';
+import AddTask from './AddTask.js';
+import TaskList from './TaskList.js';
+
+export default function TaskApp() {
+  const [tasks, setTasks] = useState(initialTasks);
+
+  function handleAddTask(text) {
+    setTasks([
+      ...tasks,
+      {
+        id: nextId++,
+        text: text,
+        done: false,
+      },
+    ]);
+  }
+
+  function handleChangeTask(task) {
+    setTasks(
+      tasks.map((t) => {
+        if (t.id === task.id) {
+          return task;
+        } else {
+          return t;
+        }
+      })
+    );
+  }
+
+  function handleDeleteTask(taskId) {
+    setTasks(tasks.filter((t) => t.id !== taskId));
+  }
+
+  return (
+    <>
+      <h1>Prague itinerary</h1>
+      <AddTask onAddTask={handleAddTask} />
+      <TaskList
+        tasks={tasks}
+        onChangeTask={handleChangeTask}
+        onDeleteTask={handleDeleteTask}
+      />
+    </>
+  );
+}
+
+let nextId = 3;
+const initialTasks = [
+  {id: 0, text: 'Visit Kafka Museum', done: true},
+  {id: 1, text: 'Watch a puppet show', done: false},
+  {id: 2, text: 'Lennon Wall pic', done: false},
+];
+`}
+</CodeBlock>
+
+각 이벤트 핸들러는 state를 업데이트하기 위해 `setTasks`를 호출한다. 이 컴포넌트가 커짐에 따라 여기저기 흩어져있는 상태 로직의 양도 늘어난다. 이러한 복잡성을 줄이고 모든 로직을 접근하기 쉬운 한 곳에 유지하려면 해당 상태 로직을 컴포넌트 외부의 단일 함수 "리듀서"로 옮길 수 있다.
+
+<br/>
+
+리듀서는 상태를 처리하는 다른 방식이다. 세 단계로 `useState`에서 `useReducer`로 마이그레이션 할 수 있다.
+
+1, setting state 문을 액션 디스패치로 이동
+2. reducer 함수 작성
+3. 컴포넌트에서 리듀서 사용하기
+
+- - - 
+
+## STEP 1: setting state 문을 액션 디스패치로 이동
+
+현재 이벤트 핸들러는 상태를 설정하여 수행할 작업을 지정한다:
+
+<CodeBlock>
+{`function handleAddTask(text) {
+  setTasks([
+    ...tasks,
+    {
+      id: nextId++,
+      text: text,
+      done: false,
+    },
+  ]);
+}
+
+function handleChangeTask(task) {
+  setTasks(
+    tasks.map((t) => {
+      if (t.id === task.id) {
+        return task;
+      } else {
+        return t;
+      }
+    })
+  );
+}
+
+function handleDeleteTask(taskId) {
+  setTasks(tasks.filter((t) => t.id !== taskId));
+}`}
+</CodeBlock>
+
+state setting 로직들을 전부 지워라. 남은 것은 세 개의 이벤트 핸들러이다. 
+
+- `handleAddTask(text)` -- 유저가 “Add”를 눌렀을 때 호출
+- `handleChangeTask(task)` -- 유저가 “Delete”를 눌렀을 때 호출
+- `handleDeleteTask(taskId)` -- 유저가 “Delete”를 눌렀을 때 호출
+
+리듀서를 사용한 상태 관리는 상태를 직접 업데이트하는 것과 약간 다르다. setting state를 하여 리액트에게 "무엇을 할 것인지"를 지시하는 대신, 이벤트 핸들러에서 "actions"를 디스패치하여 "사용자가 방금 한 일"을 지정한다.(상태 업데이트 로직은 다른 곳에 있다!) 따라서 이벤트 핸들러를 통해 "setting `tasks`"를 하는 대신 "작업을 추가 / 삭제/ 변경" 하는 액션을 디스패치하는 것이다. 이것이 사용자의 의도를 더 잘 설명한다.
+
+<CodeBlock>
+{`function handleAddTask(text) {
+  dispatch({
+    type: 'added',
+    id: nextId++,
+    text: text,
+  });
+}
+
+function handleChangeTask(task) {
+  dispatch({
+    type: 'changed',
+    task: task,
+  });
+}
+
+function handleDeleteTask(taskId) {
+  dispatch({
+    type: 'deleted',
+    id: taskId,
+  });
+}`}
+</CodeBlock>
+
+`dispatch`로 전달하는 객체를 "액션"이라고 한다. 
+
+<CodeBlock>
+{`function handleDeleteTask(taskId) {
+  dispatch(
+    // "action" object:
+    {
+      type: 'deleted',
+      id: taskId,
+    }
+  );
+}`}
+</CodeBlock>
+
+이는 일반 자바스크립트 객체이다. 여기에 무엇을 넣을지는 여러분이 결정하지만, 일반적으로 "어떤 일이 일어났는지"에 대한 최소한의 정보를 포함해야 한다.
+
+<ColorCard color='green' title='Note'>
+action 객체는 어떤 모양이든 가질 수 있다. 
+
+<br/>
+
+컨벤션에 따라, 어떤 일이 일어났는지를 설명하는 문자열은 `type`이라고 칭한다. 무슨 일이 일어났는지 설명하는 이름을 선택해라!
+
+<CodeBlock>
+{`dispatch({
+  // specific to component
+  type: 'what_happened',
+  // other fields go here
+});`}
+</CodeBlock>
+
+</ColorCard>
+
+- - -
+
+## STEP 2: reducer 함수 작성
+
+reducer 함수는 state 로직을 넣는 곳이다. 리듀서 함수는 2개의 인자를 받는데, 하나는 현재 상태(current state)이고 하나는 액션 객체이다, 그리고 반환 값은 다음 상태(next state)이다.
+
+<CodeBlock>
+{`function yourReducer(state, action) {
+  // return next state for React to set
+}`}
+</CodeBlock>
+
+리액트에서는 reducer에서 반환한 값(next state)으로 상태를 설정한다.
+
+<br/>
+
+state setting 로직을 이벤트 핸들러로부터 리듀서 함수로 옮기려면 다음과 같이 해라:
+
+1. current state(`tasks`)를 첫번째 인수로 선언
+2. 두 번째 인수로 `action` 객체를 선언
+3. 리듀서 함수에서 next state를 반환
+
+<br/>
+
+다음은 리듀서 함수로 마이그레이션된 모든 state setting 로직이다.
+
+<CodeBlock>
+{`function tasksReducer(tasks, action) {
+  if (action.type === 'added') {
+    return [
+      ...tasks,
+      {
+        id: action.id,
+        text: action.text,
+        done: false,
+      },
+    ];
+  } else if (action.type === 'changed') {
+    return tasks.map((t) => {
+      if (t.id === action.task.id) {
+        return action.task;
+      } else {
+        return t;
+      }
+    });
+  } else if (action.type === 'deleted') {
+    return tasks.filter((t) => t.id !== action.id);
+  } else {
+    throw Error('Unknown action: ' + action.type);
+  }
+}`}
+</CodeBlock>
+
+리듀서 함수는 state(`tasks`)를 인수로 받기 때문에 컴포넌트 외부에서 선언할 수 있다. 이렇게 하면 인덴트 레벨이 줄어들고 코드를 더 읽기 쉽게 만들 수 있다.
+
+<ColorCard color='green' title='Note'>
+위의 코드에서는 if/else 문을 사용하지만, 리듀서 안에는 `switch` 문을 사용하는 것이 일반적인 컨벤션이다. 결과는 동일하지만 `switch` 문은 한 눈에 보기가 더 쉽다.
+
+<CodeBlock>
+{`function tasksReducer(tasks, action) {
+  switch (action.type) {
+    case 'added': {
+      return [
+        ...tasks,
+        {
+          id: action.id,
+          text: action.text,
+          done: false,
+        },
+      ];
+    }
+    case 'changed': {
+      return tasks.map((t) => {
+        if (t.id === action.task.id) {
+          return action.task;
+        } else {
+          return t;
+        }
+      });
+    }
+    case 'deleted': {
+      return tasks.filter((t) => t.id !== action.id);
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}`}
+</CodeBlock>
+
+각 `case` 블록들을 중괄호로 묶어 선언된 변수들이 충돌하지 않도록 하는 것이 좋다. 또한 `case`는 일반적으로 반환으로 끝난다. 리턴을 잊어버리면 다음 `case`로 넘어가 실수로 이어질 수 있다. 
+</ColorCard>
+
+<DeepDive>
+### 왜 reducer라 불릴까? 
+
+리듀서는 컴포넌트 내부의 코드 양을 "reduce" 할 수 있지만, 실제로는 배열에서 수행할 수 있는 `reduce()` 메소드에서 비롯되었다. 
+
+`reduce()` 연산을 사용하면 배열을 가져와 값을 "누적(accumulate)" 할 수 있다. 
+
+<CodeBlock>
+{`const arr = [1, 2, 3, 4, 5];
+const sum = arr.reduce(
+  (result, number) => result + number
+); // 1 + 2 + 3 + 4 + 5`}
+</CodeBlock>
+
+리듀서 함수는 이와 유사하게 작동한다. 지금까지의 결과와, current item을 취한 다음, 다음 결과를 반환한다.
+리액트 리듀서는 지금까지의 상태와 액션을 취하고 다음 상태를 반환하는 동일한 개념의 예시이다. 이런식으로 시간이 지남에 따라 액션을 상태에 누적한다.
+
+</DeepDive>
+
+- - -
+
+## STEP 3: 컴포넌트에서 리듀서 사용하기
+
+마지막으로, 컴포넌트에 `tasksReducer`를 연결해야 한다. React에서 `useReducer` Hook을 import 해온다:
+
+<CodeBlock>
+{`import { useReducer } from 'react';`}
+</CodeBlock>
+
+그런 다음 `useState`를 `useReducer`로 대체한다.
+
+<CodeBlock>
+{`const [tasks, setTasks] = useState(initialTasks);`}
+</CodeBlock>
+
+`useReducer`를 다음과 같이 사용해라:
+
+<CodeBlock>
+{`const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);`}
+</CodeBlock>
+
+`useReducer` 훅은 `useState`와 비슷하다 -- initial state를 전달해야 하며, 반환값으로는 state value와 state를 변경하는 함수를 반환한다.(`useReducer`의 경우는 dispatch 함수이다.) 
+
+하지만 조금 다르다.
+
+<br/>
+
+`useReducer` 훅은 2개의 인자를 전달한다.
+
+1. 리듀서 함수
+2. 초기 state
+
+그리고 다음 2가지를 반환한다:
+
+1. stateful value
+2. dispatch 함수(user action을 reducer에게 "dispatch"하기 위해)
+
+이제 완전히 연결되었다! 여기서 리듀서는 컴포넌트 파일 하단에 선언되어 있다:
+
+<CodeBlock>
+{`import { useReducer } from 'react';
+import AddTask from './AddTask.js';
+import TaskList from './TaskList.js';
+
+export default function TaskApp() {
+  const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+
+  function handleAddTask(text) {
+    dispatch({
+      type: 'added',
+      id: nextId++,
+      text: text,
+    });
+  }
+
+  function handleChangeTask(task) {
+    dispatch({
+      type: 'changed',
+      task: task,
+    });
+  }
+
+  function handleDeleteTask(taskId) {
+    dispatch({
+      type: 'deleted',
+      id: taskId,
+    });
+  }
+
+  return (
+    <>
+      <h1>Prague itinerary</h1>
+      <AddTask onAddTask={handleAddTask} />
+      <TaskList
+        tasks={tasks}
+        onChangeTask={handleChangeTask}
+        onDeleteTask={handleDeleteTask}
+      />
+    </>
+  );
+}
+
+function tasksReducer(tasks, action) {
+  switch (action.type) {
+    case 'added': {
+      return [
+        ...tasks,
+        {
+          id: action.id,
+          text: action.text,
+          done: false,
+        },
+      ];
+    }
+    case 'changed': {
+      return tasks.map((t) => {
+        if (t.id === action.task.id) {
+          return action.task;
+        } else {
+          return t;
+        }
+      });
+    }
+    case 'deleted': {
+      return tasks.filter((t) => t.id !== action.id);
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+
+let nextId = 3;
+const initialTasks = [
+  {id: 0, text: 'Visit Kafka Museum', done: true},
+  {id: 1, text: 'Watch a puppet show', done: false},
+  {id: 2, text: 'Lennon Wall pic', done: false},
+];
+`}
+</CodeBlock>
+
+원한다면, 리듀서 함수를 다른 파일로 이동할 수도 있다:
+
+<Tabs variant='enclosed'>
+    <TabList>
+        <Tab>App.js</Tab>
+        <Tab>tasksReducer.js</Tab>
+    </TabList>
+    <TabPanels>
+        <TabPanel>
+        <CodeBlock>
+        {`import { useReducer } from 'react';
+import AddTask from './AddTask.js';
+import TaskList from './TaskList.js';
+import tasksReducer from './tasksReducer.js';
+
+export default function TaskApp() {
+  const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+
+  function handleAddTask(text) {
+    dispatch({
+      type: 'added',
+      id: nextId++,
+      text: text,
+    });
+  }
+
+  function handleChangeTask(task) {
+    dispatch({
+      type: 'changed',
+      task: task,
+    });
+  }
+
+  function handleDeleteTask(taskId) {
+    dispatch({
+      type: 'deleted',
+      id: taskId,
+    });
+  }
+
+  return (
+    <>
+      <h1>Prague itinerary</h1>
+      <AddTask onAddTask={handleAddTask} />
+      <TaskList
+        tasks={tasks}
+        onChangeTask={handleChangeTask}
+        onDeleteTask={handleDeleteTask}
+      />
+    </>
+  );
+}
+
+let nextId = 3;
+const initialTasks = [
+  {id: 0, text: 'Visit Kafka Museum', done: true},
+  {id: 1, text: 'Watch a puppet show', done: false},
+  {id: 2, text: 'Lennon Wall pic', done: false},
+];
+`}
+        </CodeBlock>
+        </TabPanel>
+        <TabPanel>
+        <CodeBlock>
+        {`export default function tasksReducer(tasks, action) {
+  switch (action.type) {
+    case 'added': {
+      return [
+        ...tasks,
+        {
+          id: action.id,
+          text: action.text,
+          done: false,
+        },
+      ];
+    }
+    case 'changed': {
+      return tasks.map((t) => {
+        if (t.id === action.task.id) {
+          return action.task;
+        } else {
+          return t;
+        }
+      });
+    }
+    case 'deleted': {
+      return tasks.filter((t) => t.id !== action.id);
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+`}
+        </CodeBlock>
+        </TabPanel>
+    </TabPanels>
+</Tabs>
+
+
+<br/>
+
+이렇게 컴포넌트 로직을 분리하면 컴포넌트 로직을 더 쉽게 읽을 수 있다. 이제 이벤트 핸들러는 액션을 디스패치하여 어떤 일이 일어났는지만 지정하고, 리듀서 함수는 그에 대한 응답으로 상태가 업데이트되는 방식을 결정한다.
+
+- - -
+
+## `useState` vs `useReducer` 비교
+
+리듀서에도 단점이 없는 것은 아니다. 몇 가지 비교 방법을 소개한다:
+
+- 코드 길이
+    - 일반적으로 `useState`를 사용하면 미리 작성해야 하는 코드가 줄어든다. `useReducer`를 사용하면 리듀서 함수와 디스패치 action을 모두 작성해야 한다. 그러나 많은 이벤트 핸들러가 비슷한 방식으로 상태를 수정하는 경우, `useReducer`를 사용하면 코드를 줄이는데 도움이 될 수 있다.
+- 가독성
+    - `useState`는 state update가 간단하면 매우 읽기 쉽다. 더 복잡해지면 컴포넌트의 코드가 부풀어오르고 스캔하기 어려워질 수 있다. 이 경우 `useReducer`를 사용하면 업데이트 로직의 방법과 이벤트 핸들러의 결과를 깔끔하게 분리할 수 있다.
+- 디버깅
+    - `useState`에 버그가 발생하면, state가 잘못 설정된 위치와 그 이유를 알기 어려울 수 있다. 반면 `useReducer`를 사용하면 리듀서애 콘솔 로그를 추가하여 모든 상태 업데이트와 어떤 작업으로 인해 버그가 발생했는지 확인할 수 있다. 하지만 `useState`를 사용할 때보다 더 많은 코드를 살펴봐야ㅑ 한다.
+- 테스팅
+    - 리듀서는 컴포넌트에 의존하지 않는 순수한 함수이다. 즉, 별도로 내보내고 테스트할 수 있다. 일반적으로 보다 현실적인 환경에서 구성 요소를 테스트하는 것이 가장 좋지만 복잡한 상태 업데이트 로직의 경우에는 감속기가 특정 초기 상태 및 작업에 대해 특정 상태를 반환한다고 주장하는 것이 유용할 수 있다. 
+- 개인적 선호도
+    - 어떤 사람은 리듀서를 좋아하고 어떤 사람은 싫어합니다. 괜찮습니다. 취향의 문제입니다. `useState`와 `useReducer`는 언제든지 서로 변환할 수 있으며 서로 동등하다!
+
+
+만약 일부 컴포넌트에서 잘못된 상태 업데이트로 인해 버그가 자주 발생하고, 코드에 더 많은 구조를 도입하려는 경우에는 리듀서를 권장한다. 모든 컴포넌트에 리듀서를 사용할 필요는 없으니 자유롭게 혼합하여 사용해라! 같은 컴포넌트에서 `useState`와 `useReducer`를 혼합하여 사용할 수도 있다. 
+
+- - -
+
+## reducer 잘 쓰기
+
+리듀서를 작성할 때는 이 두 가지 팁을 잘 기억해라.
+
+- 리듀서는 반드시 순수함수여야 한다. 
+    - 상태 updater 함수와 마찬가지로 리듀서는 렌더링 중에 실행된다.
+    - actions는 다음 렌더링까지 대기한다.
+    - 즉. 리듀서는 동일한 입력이 항상 동일한 출력으로 이어지는 순수함수여야 한다.
+    - 요청을 보내거나, timeout을 예약하거나, 부작용을 수행해서는 안된다.
+    - 리듀서는 mutation 없이 객체와 배열을 업데이트해야 한다.
+- 각각의 action은 하나의 user interaction 만 설명한다. (데이터의 여러 변경으로 이어지더라도)
+    - 예를 들어, 사용자가 리듀서가 관리하는 5개의 필드가 있는 form에서 "Reset"을 누른 경우, 5개의 개별 `set_field` 액션 보다는 하나의 `reset_form` 액션을 전송하는 것이 더 합리적이다.
+    - 모든 액션을 리듀서에 기록하면 어떤 상호작용이나 응답이 어떤 순서로 발생했는지 재구성할 수 있을 정도로 로그가 명확해야 한다.
+    - 이는 디버깅에 도움이 된다!
+
+- - -
+
+## 리듀서를 Immer와 함께 간략하게 작성
+
+객체와 배열을 업데이트할 때와 마찬가지로 Immer 라이브러리를 사용해 리듀서를 더 간결하게 만들 수 있다. 여기서 `useImmerReducer`를 사용하면 `push` 또는 `arr[i] = ` 할당문으로 상태를 변경할 수 있다:
+
+<CodeBlock>
+{`import { useImmerReducer } from 'use-immer';
+import AddTask from './AddTask.js';
+import TaskList from './TaskList.js';
+
+function tasksReducer(draft, action) {
+  switch (action.type) {
+    case 'added': {
+      draft.push({
+        id: action.id,
+        text: action.text,
+        done: false,
+      });
+      break;
+    }
+    case 'changed': {
+      const index = draft.findIndex((t) => t.id === action.task.id);
+      draft[index] = action.task;
+      break;
+    }
+    case 'deleted': {
+      return draft.filter((t) => t.id !== action.id);
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+
+export default function TaskApp() {
+  const [tasks, dispatch] = useImmerReducer(tasksReducer, initialTasks);
+
+  function handleAddTask(text) {
+    dispatch({
+      type: 'added',
+      id: nextId++,
+      text: text,
+    });
+  }
+
+  function handleChangeTask(task) {
+    dispatch({
+      type: 'changed',
+      task: task,
+    });
+  }
+
+  function handleDeleteTask(taskId) {
+    dispatch({
+      type: 'deleted',
+      id: taskId,
+    });
+  }
+
+  return (
+    <>
+      <h1>Prague itinerary</h1>
+      <AddTask onAddTask={handleAddTask} />
+      <TaskList
+        tasks={tasks}
+        onChangeTask={handleChangeTask}
+        onDeleteTask={handleDeleteTask}
+      />
+    </>
+  );
+}
+
+let nextId = 3;
+const initialTasks = [
+  {id: 0, text: 'Visit Kafka Museum', done: true},
+  {id: 1, text: 'Watch a puppet show', done: false},
+  {id: 2, text: 'Lennon Wall pic', done: false},
+];
+`}
+</CodeBlock>
+
+리듀서는 순수해야 하므로, 상태를 mutate 하지 않아야 한다. 하지만 Immer는 변경해도 안전한 특별한 draft 객체를 제공한다. 내부적으로 Immer는 사용자가 draft를 변경한 상태로 state의 복사본을 생성한다. 따라서 `useImmerReducer`로 관리되는 리듀서는 첫번째 인자(state)를 변경할 수 있고, new state를 반환할 필요가 없다.
+
+<WhiteCard title='요약'>
+- `useState`에서 `useReducer`로 변환하는 법:
+    1. 이벤트 핸들러에서 액션을 디스패치한다.
+    2. 리듀서 함수를 작성한다.
+        - 주어진 상태와 액션에 대해 다음 상태를 반환하는 리듀서 함수
+    3. `useState`를 `useReducer`로 대체한다.
+- 리듀서는 코드를 좀 더 작성해야 하긴 하지만, 디버깅과 테스팅에 도움이 된다.
+- 리듀서는 순수해야 한다.
+- 각 액션은 하나의 사용자 인터렉션을 설명한다.
+- mutating 스타일로 리듀서를 작성하려면 Immer를 사용해라.
+</WhiteCard>
+
+
+

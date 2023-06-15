@@ -77,19 +77,19 @@ const navbarData = [
                 href: '../../managing-state/reacting-to-input-with-state',
             },
             {
-                title: 'choosing-the-state-structure',
+                title: 'state 구조 선택',
                 href: '../../managing-state/choosing-the-state-structure',
             },
             {
-                title: 'sharing-state-between-components',
+                title: '컴포넌트끼리 상태 공유하기',
                 href: '../../managing-state/sharing-state-between-components',
             },
             {
-                title: 'preserving-and-resetting-state',
+                title: '상태 보존 & 재설정',
                 href: '../../managing-state/preserving-and-resetting-state',
             },
             {
-                title: 'extracting-state-logic-into-a-reducer',
+                title: '상태 로직을 Reducer로 추출하기',
                 href: '../../managing-state/extracting-state-logic-into-a-reducer',
             },
             {
