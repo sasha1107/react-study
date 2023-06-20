@@ -1,3 +1,330 @@
 import { WhiteCard, ColorCard, DeepDive, Highlight, CodeBlock, Pitfall, RedCard, AlertBanner } from '@app/components';
+import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
+} from '@chakra-ui/react'
 
-# Title
+# Refs로 값 참조하기
+
+컴포넌트가 특정 정보를 "기억"하도록 하고 싶지만 해당 정보가 리렌더링을 트리거하지 않도록 하려는 경우, `ref`를 사용할 수 있다.
+
+<WhiteCard title='You will learn'>
+- 컴포넌트에 ref를 추가하는 방법
+- ref value를 업데이트하는 방법
+- state와 ref의 차이점
+- ref를 안전하게 사용하는 방법
+</WhiteCard>
+
+- - - 
+
+## 컴포넌트에 ref를 추가하는 방법
+
+리액트에서 `useRef` 훅을 import 하여 컴포넌트에 ref를 추가할 수 있다.
+
+<CodeBlock>
+{`import { useRef } from 'react';`}
+</CodeBlock>
+
+컴포넌트 내에서 `useRef` Hook을 호출하고 참조하려는 초기 값을 유일한 인수로 전달합니다. 예를 들어, 다음은 값 0에 대한 ref입니다:
+
+<CodeBlock>
+{`const ref = useRef(0);`}
+</CodeBlock>
+
+`useRef`는 다음과 같은 객체를 반환한다.
+
+<CodeBlock>
+{`{ 
+  current: 0 // The value you passed to useRef
+}`}
+</CodeBlock>
+
+`ref.current` 속성을 통해 해당 ref의 현재 값에 엑세스할 수 있다. 이 값은 의도적으로 mutation 가능하므로 읽기와 쓰기 모두 가능하다. (이것이 바로 리액트의 단방향 흐름에서 "탈출구"가 되는 이유이다. - 아래에서 자세히 설명)
+
+<br/>
+
+여기서 버튼은 클릭할 때마다 ref.current를 증가시킨다.
+
+<CodeBlock>
+{`import { useRef } from 'react';
+
+export default function Counter() {
+  let ref = useRef(0);
+
+  function handleClick() {
+    ref.current = ref.current + 1;
+    alert('You clicked ' + ref.current + ' times!');
+  }
+
+  return (
+    <button onClick={handleClick}>
+      Click me!
+    </button>
+  );
+}
+`}
+</CodeBlock>
+
+여기서 ref는 숫자를 가리키지만 state와 마찬가지로 문자열, 객체, 함수 등 무엇이든 가리킬 수 있습니다. state와 달리 ref는 `current` 속성을 읽고 수정할 수 있는 일반 JavaScript 객체이다.
+
+<br/>
+
+이때 ref.current가 증가할 때마다 다시 렌더링되지 않는다는 점에 유의하세요. state와 마찬가지로 ref는 리렌더링 사이에 React에 의해 유지됩니다. 하지만 state를 설정하면 컴포넌트가 다시 렌더링됩니다. ref는 변경되어도 리렌더링되지 않는다!
+
+
+- - -
+
+## 예제: 스톱워치 만들기
+
+ref 와 state를 하나의 컴포넌트에서 결합할 수 있다. 예를 들어 사용자가 버튼을 눌러 시작하거나 중지할 수 있는 스톱워치를 만들어보자. 사용자가 "시작"을 누른 후 얼마나 시간이 지났는지 표시하려면 시작 버튼을 누른 시점과 현재 시간을 추적해야 한다. 이 정보는 렌더링에 사용되므로 state를 유지해야 한다. 
+
+<CodeBlock>
+{`const [startTime, setStartTime] = useState(null);
+const [now, setNow] = useState(null);`}
+</CodeBlock>
+
+유저가 "Start" 를 누르면, 10 밀리초마다 시간을 업데이트하기 위해 `setInterval`을 사용한다:
+
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Stopwatch() {
+  const [startTime, setStartTime] = useState(null);
+  const [now, setNow] = useState(null);
+
+  function handleStart() {
+    // Start counting.
+    setStartTime(Date.now());
+    setNow(Date.now());
+
+    setInterval(() => {
+      // Update the current time every 10ms.
+      setNow(Date.now());
+    }, 10);
+  }
+
+  let secondsPassed = 0;
+  if (startTime != null && now != null) {
+    secondsPassed = (now - startTime) / 1000;
+  }
+
+  return (
+    <>
+      <h1>Time passed: {secondsPassed.toFixed(3)}</h1>
+      <button onClick={handleStart}>
+        Start
+      </button>
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+"Stop" 버튼이 눌렸을 때는 상태 변수 `now`의 업데이트를 중지하도록 기존 interval을 취소해야 한다. 이 작업은 `clearInterval`을 호출하여 수행할 수 있지만, 사용자가 시작을 눌렀을 때 이전에 `setInterval`호출에서 반환한 interval ID를 제공해야 한다. 이를 위해 `interval ID`를 어딘가에 저장해야 한다. interval ID는 렌더링에 사용되지 않으므로, ref에 보관할 수 있다. 
+
+<CodeBlock>
+{`import { useState, useRef } from 'react';
+
+export default function Stopwatch() {
+  const [startTime, setStartTime] = useState(null);
+  const [now, setNow] = useState(null);
+  const intervalRef = useRef(null);
+
+  function handleStart() {
+    setStartTime(Date.now());
+    setNow(Date.now());
+
+    clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      setNow(Date.now());
+    }, 10);
+  }
+
+  function handleStop() {
+    clearInterval(intervalRef.current);
+  }
+
+  let secondsPassed = 0;
+  if (startTime != null && now != null) {
+    secondsPassed = (now - startTime) / 1000;
+  }
+
+  return (
+    <>
+      <h1>Time passed: {secondsPassed.toFixed(3)}</h1>
+      <button onClick={handleStart}>
+        Start
+      </button>
+      <button onClick={handleStop}>
+        Stop
+      </button>
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+렌더링에 필요한 정보가 사용되는 경우 해당 정보를 state로 유지해라. 이벤트 핸들러만 정보를 필요로 하고 & 변경해도 다시 렌더링할 필요가 없는 경우에는 ref를 사용히는 것이 더 효율적일 수 있다. 
+
+- - -
+
+## ref VS  state 비교
+
+<TableContainer>
+  <Table variant='simple'>
+    <Thead>
+      <Tr>
+        <Th>refs</Th>
+        <Th>state</Th>
+      </Tr>
+    </Thead>
+    <Tbody>
+      <Tr>
+        <Td>`useRef(initialValue)` returns `{ current: initialValue }`</Td>
+        <Td>`useState(initialValue)` returns `[value, setValue]`</Td>
+      </Tr>
+      <Tr>
+        <Td>변경되어도 리렌더링을 유발하지 않는다.</Td>
+        <Td>변경되면 리렌더링 트리거</Td>
+      </Tr>
+      <Tr>
+        <Td>mutable - 렌더링 프로세스 외부에서 `current` value를 수정하고 업데이트할 수 있다.</Td>
+        <Td>immutable - state setting function을 사용하여 상태 변수를 수정하여 리렌더를 대기열에 추가해야 한다.</Td>
+      </Tr>
+      <Tr>
+        <Td>렌더링 중에는 `current` value를 읽거나 쓰지 않아야 한다.</Td>
+        <Td>언제든지 상태를 읽을 수 있다. 그러나 각 렌더링에는 변경되지 않는 자체 상태 스냅샷이 있다.</Td>
+      </Tr>
+    </Tbody>
+  </Table>
+</TableContainer>
+
+다음은 state로 구현된 카운터 버튼이다.
+
+<CodeBlock>
+{`import { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    setCount(count + 1);
+  }
+
+  return (
+    <button onClick={handleClick}>
+      You clicked {count} times
+    </button>
+  );
+}`}
+</CodeBlock>
+
+`count` 값이 화면에 표시되므로 state를 사용하는 것이 합리적이다. 카운터 값이 `setCount()`로 설정되면 리액트는 컴포넌트를 리렌더하여 화면이 새로운 count를 반영하도록 업데이트한다.
+
+<br/>
+
+만약 이것을 ref로 구현하려고 한다면, 리액트는 컴포넌트를 다시 렌더링하지 않으므로 카운트가 변경되는 것을 화면에서 볼 수 없다. 버튼을 클릭해도 카운트 텍스트가 증가하지 않는 것을 확인해라:
+
+<CodeBlock>
+{`import { useRef } from 'react';
+
+export default function Counter() {
+  let countRef = useRef(0);
+
+  function handleClick() {
+    // This doesn't re-render the component!
+    countRef.current = countRef.current + 1;
+  }
+
+  return (
+    <button onClick={handleClick}>
+      You clicked {countRef.current} times
+    </button>
+  );
+}
+`}
+</CodeBlock>
+
+이는 렌더링 중에 `ref.current`를 읽으면 코드가 불안정해지는 이유이다. 필요하다면 state를 사용하라.
+
+<DeepDive>
+### useRef는 내부적으로 어떻게 동작하는가?
+
+useState와 useRef는 모두 리액트에서 제공하지만, 원칙적으로 `useRef`는 `useState` 위에서 구현된다. 리액트 내부에서 useRef는 다음과 같이 구현된다고 상상할 수 있다:
+
+<CodeBlock>
+{`// Inside of React
+function useRef(initialValue) {
+  const [ref, unused] = useState({ current: initialValue });
+  return ref;
+}`}
+</CodeBlock>
+
+첫번째 렌더링 중에 `useRef`는 `{ current: initialValue }`를 반환한다. 이 객체는 리액트에 의해 저장되므로, 다음 렌더링 중에 동일한 객체가 반환된다. 이 예제에서 state setter가 어떻게 사용되지 않는 것에 주목해라. useRef는 항상 동일한 객체를 반환해야 하기 때문에 setter 함수는 불필요하다.
+
+<br/>
+
+useRef는 setter 함수가 없는 일반 state라고 생각할 수 있다. 객체 지향 프로그래밍에 익숙하다면 ref를 인스턴스 필드를 떠올릴 수 있지만 `this.something` 대신 `somethingRef.current`를 작성하면 된다.
+</DeepDive>
+
+- - - 
+
+## ref를 사용하는 경우
+
+일반적으로 컴포넌트가 리액트 "외부로 나가서" 외부 API, 즉 컴포넌트 모양에 영향을 주지 않는 브라우저 API와 통신해야 할 때 ref를 사용한다. 다음은 이러한 드문 상황 중 몇 가지이다:
+
+- timeout ID 저장할 때
+- DOM 요소 저장, 조작할 때
+- JSX 계산에 필요하지 않은 다른 객체를 저장할 때
+
+컴포넌트에 일부 값을 저장해야 하지만 렌더링 로직에 영향을 주지 않는 경우, ref를 선택해라.
+
+- - -
+
+## ref 모범 사례
+
+이러한 원칙을 따르면 컴포넌트를 더욱 예측 가능하게 만들 수 있다. 
+
+- ref를 탈출구(escape hatch)로 취급해라. 
+    - ref는 외부 시스템이나 브라우저 API로 작업할 때 유용하다.
+    - 애플리케이션 로직과 데이터 흐름의 대부분이 ref에 의존하는 경우, 접근 방식을 재고해야 한다.
+- 렌더링 중에는 `ref.current`를 읽거나 쓰지 마라. 
+    - 렌더링 중에 일부 정보가 필요하다면, state를 사용해라
+    - 리액트는 `ref.current`가 언제 변경되는지 모르기 때문에 렌더링 중에 읽어도 컴포넌트의 동작을 예측하기 어렵다.
+    - 유일한 예외는 첫번째 렌더링 중에 ref를 한번만 설정하는 `if (!ref.current) ref.current = new Thing()` 같은 코드이다.
+
+리액트 state의 제한은 ref에는 적용되지 않는다. 예를 들어 state는 모든 렌더링에 대해 스냅샷처럼 작동하며 동기적으로 업데이트되지 않는다. 하지만 ref의 current value를 변경하면, 즉시 변경된다.
+
+<CodeBlock>
+{`ref.current = 5;
+console.log(ref.current); // 5`}
+</CodeBlock>
+
+이는 ref 자체가 일반 자바스크립트 객체이므로 자바스크립트 객체처럼 동작하기 때문이다.
+
+<br/>
+
+또한 ref로 작업할 때 mutation을 피하는 것에 대해 걱정할 필요가 없다. mutate 하는 객체가 렌더링에 사용되지 않는 한, 리액트는 ref나 그 contents로 무엇을 하든 상관하지 않는다.
+
+- - -
+
+## ref와 DOM
+
+ref는 모든 값을 가리킬 수 있다. 그러나 ref의 가장 일반적인 사용 사례는 DOM 요소에 엑세스하는 것이다. 예를 들어 input 요소에 focus 하고자 할 때 유용하다. `<div ref={myRef}>` 와 같이 JSX의 어트리뷰트에 `ref`를 전달하면 리액트는 해당 DOM 요소를 `myRef.current`에 넣는다. 
+
+- - - 
+
+<WhiteCard title='요약'>
+- ref는 렌더링에 사용되지 않는 값을 보관하기 위한 escape hatch이다.
+- ref는 `current`라는 단일 프로퍼티를 가진 일반 자바스크립트 객체로, 읽거나 쓸 수 있다.
+- `useRef` 훅을 호출하여 리액트에 ref를 제공하도록 요청할 수 있다.
+- state와 마찬가지로 ref를 사용하면 컴포넌트의 리렌더 사이에 정보를 유지할 수 있다.
+- state와 달리 ref의 `current`값을 설정해도 리렌더링이 트리거되지 않는다.
+- 렌더링 중에는 `ref.current`를 읽거나 쓰지 마세요. 컴포넌트를 예측하기 어렵습니다.
+</WhiteCard>
