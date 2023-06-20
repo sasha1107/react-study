@@ -1,3 +1,296 @@
 import { WhiteCard, ColorCard, DeepDive, Highlight, CodeBlock, Pitfall, RedCard, AlertBanner } from '@app/components';
+import CatFriends from './CatFriends'
 
-# Title
+# Ref로 돔 조작하기
+
+리액트는 렌더링 출력과 일치하도록 돔을 자동으로 업데이트하기 때문에, 컴포넌트를 자주 조작할 필요가 없다. 하지만 때로는 노드에 포커스를 맞추거나, 스크롤하거나 크기와 위치를 측정하기 위해 리액트가 관리하는 돔 요소에 접근해야 할 수도 있다. 
+
+리액트에는 이러한 작업을 수행할 수 있는 내장된 방법이 없으므로 DOM 노드에 대한 ref가 필요하다.
+
+<WhiteCard title='You will learn'>
+- `ref` 어트리뷰트로 리액트가 관리하는 돔 노드에 접근하는 방법
+- `ref`JSX 어트리뷰트가 `useRef` 훅과 관련되는 방식
+- 다른 컴포넌트의 DOM 노드에 접근하는 방법
+- 어떤 경우에 리액트가 관리하는 DOM을 수정해도 안전한가
+</WhiteCard>
+
+- - -
+
+## 노드에 대한 ref 가져오기
+
+리액트가 관리하는 돔 노드에 접근하려면 먼저 `useRef` 훅을 import 해온다:
+
+<CodeBlock>
+{`import { useRef } from 'react'`}
+</CodeBlock>
+
+그런 다음 컴포넌트 내부에서 ref를 선언하는데 `useRef` 훅을 사용한다.
+
+<CodeBlock>
+{`const myRef = useRef(null);`}
+</CodeBlock>
+
+마지막으로 DOM 노드를 가져올 JSX 태그에 `ref` 어트리뷰트로 전달한다.
+
+<CodeBlock>
+{`<div ref={myRef}>`}
+</CodeBlock>
+
+`useRef` 훅은 `current` 라는 단일 프로퍼티를 가진 객체를 반환한다. 처음에 `myRef.current`는 null이 될 것이다. 리액트가 이 `<div>`에 대한 돔 노드를 생성할 때, 리액트는 이 노드에 대한 ref를 myRef.current에 넣는다. 그런 다음 이벤트 핸들러에서 이 DOM 노드에 접근하고 여기에 정의된 내장 브라우저 API를 사용할 수 있다.
+
+<CodeBlock>
+{`// You can use any browser APIs, for example:
+myRef.current.scrollIntoView();`}
+</CodeBlock>
+
+- - -
+
+### 예제: text input에 포커싱하기
+
+이 예제에서는, 버튼을 클릭하면 input에 포커싱된다.
+
+<CodeBlock>
+{`import { useRef } from 'react';
+
+export default function Form() {
+  const inputRef = useRef(null);
+
+  function handleClick() {
+    inputRef.current.focus();
+  }
+
+  return (
+    <>
+      <input ref={inputRef} />
+      <button onClick={handleClick}>
+        Focus the input
+      </button>
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+이를 구현하기 위해서는:
+
+<br/>
+
+1. `useRef` 훅으로 `inputRef`를 선언한다.
+2. 이를 `<input ref={inputRef}>`로 전달한다.
+    - 이렇게 하면 리액트가 이 `<input>`에 대한 돔 노드를 `inputRef.current`에 넣도록 지시한다.
+3. `handleClick` 함수에서 `inputRef.current`로부터 DOM 노드를 읽고, `focus()` 메서드를 호출한다.(`inputRef.current.focus()`)
+4. `handleClick` 이벤트 핸들러를 `<button>`의 `onClick` 어트리뷰트로 전달한다.
+
+DOM 조작이 ref의 가장 일반적인 사용 사례이지만, `useRef` 훅은 타이머 ID와 같은 리액트 외부의 것들을 저장하는데도 사용할 수 있다.
+state와 유사하게 ref는 렌더링 사이에 유지된다. ref는 상태 변수와 비슷하지만 설정할 때 재렌더링을 트리거하지 않는다. 
+
+- - - 
+
+### 예제: 요소로 스크롤하기
+
+컴포넌트 안에는 하나 이상의 ref 가 있을 수 있다. 이 예시에는 3개의 이밎로 구성된 캐러셀이 있다. 각 버튼은 해당 DOM 노드에서 `scrollIntoView()` 메서드를 호출하여 이미지를 중앙에 배치한다.
+
+<CodeBlock>
+{`import { useRef } from 'react';
+
+export default function CatFriends() {
+  const firstCatRef = useRef(null);
+  const secondCatRef = useRef(null);
+  const thirdCatRef = useRef(null);
+
+  function handleScrollToFirstCat() {
+    firstCatRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center'
+    });
+  }
+
+  function handleScrollToSecondCat() {
+    secondCatRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center'
+    });
+  }
+
+  function handleScrollToThirdCat() {
+    thirdCatRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center'
+    });
+  }
+
+  return (
+    <>
+      <nav>
+        <button onClick={handleScrollToFirstCat}>
+          Tom
+        </button>
+        <button onClick={handleScrollToSecondCat}>
+          Maru
+        </button>
+        <button onClick={handleScrollToThirdCat}>
+          Jellylorum
+        </button>
+      </nav>
+      <div>
+        <ul>
+          <li>
+            <img
+              src="https://placekitten.com/g/200/200"
+              alt="Tom"
+              ref={firstCatRef}
+            />
+          </li>
+          <li>
+            <img
+              src="https://placekitten.com/g/300/200"
+              alt="Maru"
+              ref={secondCatRef}
+            />
+          </li>
+          <li>
+            <img
+              src="https://placekitten.com/g/250/200"
+              alt="Jellylorum"
+              ref={thirdCatRef}
+            />
+          </li>
+        </ul>
+      </div>
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+<WhiteCard>
+    <CatFriends/>
+</WhiteCard>
+
+<DeepDive>
+### ref 콜백을 사용하여 ref 목록을 관리하는 방법
+
+위의 예에서는, 미리 정의된 ref의 개수가 있다. 그러나 목록의 각 항목에 대한 ref가 필요한데 얼마나 많은 ref가 필요한지 모르는 경우가 있다. 이런 경우에는 작동하지 않는다:
+
+<CodeBlock>
+{`<ul>
+  {items.map((item) => {
+    // Doesn't work!
+    const ref = useRef(null);
+    return <li ref={ref} />;
+  })}
+</ul>
+`}
+</CodeBlock>
+
+훅은 컴포넌트의 최상위 레벨에서만 호출해야 하기 때문이다. `useRef`를 루프, 조건 또는 `map()` 내부에서 호출할 수 없다.
+
+<br/>
+
+이 문제를 해결할 수 있는 한 가지 방법은 부모 엘리먼트에 대한 단일 ref를 가져온 다음 `querySelectorAll`과 같은 돔 조작 메서드를 사용하여 개별 자식 노드를 "찾는" 것이다. 하지만 이 방법은 꺠지기 쉬우며 돔 구조가 변경되면 중단될 수 있다.
+
+<br/>
+
+또 다른 해결책은 ref 속성에 함수를 전달하는 것이다. 이를 ref 콜백이라고 한다. 리액트는 ref를 설정할 때가 되면 DOM 노드로 ref 콜백을 호출하고, 지울 때가 되면 null로 호출한다. 이를 통해 자신만의 배열이나 Map을 유지 관리하고 , 인덱스나 일종의 ID로 모든 ref에 접근할 수 있다.
+
+<br/>
+
+이 예는 이 접근 방식을 사용하여 긴 목록에서 임의의 노드로 스크롤하는 방법을 보여준다:
+
+<CodeBlock>
+{`import { useRef } from 'react';
+
+export default function CatFriends() {
+  const itemsRef = useRef(null);
+
+  function scrollToId(itemId) {
+    const map = getMap();
+    const node = map.get(itemId);
+    node.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center'
+    });
+  }
+
+  function getMap() {
+    if (!itemsRef.current) {
+      // Initialize the Map on first usage.
+      itemsRef.current = new Map();
+    }
+    return itemsRef.current;
+  }
+
+  return (
+    <>
+      <nav>
+        <button onClick={() => scrollToId(0)}>
+          Tom
+        </button>
+        <button onClick={() => scrollToId(5)}>
+          Maru
+        </button>
+        <button onClick={() => scrollToId(9)}>
+          Jellylorum
+        </button>
+      </nav>
+      <div>
+        <ul>
+          {catList.map(cat => (
+            <li
+              key={cat.id}
+              ref={(node) => {
+                const map = getMap();
+                if (node) {
+                  map.set(cat.id, node);
+                } else {
+                  map.delete(cat.id);
+                }
+              }}
+            >
+              <img
+                src={cat.imageUrl}
+                alt={'Cat #' + cat.id}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+const catList = [];
+for (let i = 0; i < 10; i++) {
+  catList.push({
+    id: i,
+    imageUrl: 'https://placekitten.com/250/200?image=' + i
+  });
+}
+
+`}
+</CodeBlock>
+
+이 예제에서 `itemsRef`는 단일 DOM 노드를 보유하지 않는다. 대신 item ID 로부터 DOM 노드로의 [Map](https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/Map)을 보유한다. (Ref는 어떠한 값이든 가질 수 있다!) 모든 list item의 ref 콜백은 Map을 업데이트한다.
+
+<CodeBlock>
+{`<li
+  key={cat.id}
+  ref={node => {
+    const map = getMap();
+    if (node) {
+      // Add to the Map
+      map.set(cat.id, node);
+    } else {
+      // Remove from the Map
+      map.delete(cat.id);
+    }
+  }}
+>`}
+</CodeBlock>
+
+이렇게 하면 나중에 Map 에서 개별 DOM 노드를 읽을 수 있다.
+</DeepDive>
