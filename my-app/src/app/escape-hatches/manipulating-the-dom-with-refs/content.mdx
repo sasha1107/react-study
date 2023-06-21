@@ -1,5 +1,13 @@
 import { WhiteCard, ColorCard, DeepDive, Highlight, CodeBlock, Pitfall, RedCard, AlertBanner } from '@app/components';
 import CatFriends from './CatFriends'
+import {
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+} from '@chakra-ui/react'
+import Form from './Form'
+import Counter from './Counter'
 
 # Ref로 돔 조작하기
 
@@ -294,3 +302,365 @@ for (let i = 0; i < 10; i++) {
 
 이렇게 하면 나중에 Map 에서 개별 DOM 노드를 읽을 수 있다.
 </DeepDive>
+
+- - -
+
+## 다른 컴포넌트의 DOM 노드에 접근하기
+
+`<input />`과 같은 브라우저 요소를 출력하는 내장 컴포넌트에 ref를 넣으면 리액트는 해당 ref의 `current` 프로퍼티를 해당 DOM 노드(예: 브라우저의 실제 `<input />`로 설정한다. 
+
+<CodeBlock>
+{`import { useRef } from 'react';
+
+function MyInput(props) {
+  return <input {...props} />;
+}
+
+export default function MyForm() {
+  const inputRef = useRef(null);
+
+  function handleClick() {
+    inputRef.current.focus();
+  }
+
+  return (
+    <>
+      <MyInput ref={inputRef} />
+      <button onClick={handleClick}>
+        Focus the input
+      </button>
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+<Alert status='error'>
+  <AlertIcon />
+  <AlertTitle>Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?</AlertTitle>
+  <AlertDescription>Check the render method of `MyForm`.
+    at MyInput
+    at MyForm (https://1e4ad8f7.sandpack-bundler-4bw.pages.dev/App.js:24:38)</AlertDescription>
+</Alert>
+
+문제를 알아차리는 데 도움이 되도록 리액트는 콘솔에 오류를 출력하기도 한다:
+
+<br/>
+
+이는 기본적으로 리액트가 컴포넌트가 다른 컴포넌트의 돔 노드에 접근하는 것을 허용하지 않기 때문에 발생한다. 심지어 자신의 자식에게도 마찬가지이다! 이것은 의도적인 것이다. Ref는 탈출구이기 때문에 아껴서 사용해야 한다. 다른 컴포넌트의 돔 노드를 수동으로 조작하면 코드가 훨씬 더 취약해진다. 
+
+<br/>
+
+대신, 돔 노드를 노출하려는 컴포넌트는 해당 동작을 선택해야 한다. 컴포넌트는 자신의 ref를 자식 중 하나에 "fowards" 하도록 지정할 수 있다. `<MyInput>`이 `forwardRef` API를 사용하는 방법은 다음과 같다:
+
+<CodeBlock>
+{`const MyInput = forwardRef((props, ref) => {
+  return <input {...props} ref={ref} />;
+});`}
+</CodeBlock>
+
+이는 다음과 같이 작동한다:
+
+<br/>
+
+1. `<MyInput ref={inputRef} />`은 리액트에게 해당 돔 노드를 `input.current`에 넣으라고 지시한다.
+  - 그러나 이를 선택할지는 `MyInput` 컴포넌트의 선택에 달려있으며 - 기본적으로는 그렇지 않다. 
+
+2. `MyInput` 컴포넌트는 `forwardRef`를 사용하여 선언된다. 이렇게 하면 props 다음에 선언되는 두 번째 ref 인수로 위의 `inputRef`를 수신하도록 선택된다. 
+
+3, `MyInput`은 수신한 ref를 그 안에 있는 `<input>`으로 전달한다. 
+
+이제 버튼을 클릭하여 인풋에 포커스를 맞추면 작동한다. 
+
+<CodeBlock>
+{`import { forwardRef, useRef } from 'react';
+
+const MyInput = forwardRef((props, ref) => {
+  return <input {...props} ref={ref} />;
+});
+
+export default function Form() {
+  const inputRef = useRef(null);
+
+  function handleClick() {
+    inputRef.current.focus();
+  }
+
+  return (
+    <>
+      <MyInput ref={inputRef} />
+      <button onClick={handleClick}>
+        Focus the input
+      </button>
+    </>
+  );
+}`}
+</CodeBlock>
+
+<WhiteCard>
+  <Form />
+</WhiteCard>
+
+디자인 시스템에서 버튼, 인풋 등과 같은 low-level 컴포넌트는 해당 ref를 DOM 노드로 전달하는 것이 일반적인 패턴이다. 반면에 form, list, page section 과 같은 high-level 컴포넌트는 일반적으로 돔 구조에 대한 우발적인 종속성을 피하기 위해 돔 노드를 노출하지 않는다. 
+
+
+<DeepDive>
+### Imperative Handle로 API의 하위 집합 노출하기
+
+위의 예시에서 `MyInput`은 원래 DOM input 요소를 노출합니다. 이를 통해 부모 컴포넌트가 이 요소에 `focus()`를 호출할 수 있다. 하지만 이렇게 하면 부모 컴포넌트가 다른 작업(예: CSS 변경)을 할수도 있다. 드문 경우지만 노출되는 기능을 제한하고 싶을 수도 있다. 이 경우 `useImperativeHandle`
+
+<CodeBlock>
+{`import {
+  forwardRef, 
+  useRef, 
+  useImperativeHandle
+} from 'react';
+
+const MyInput = forwardRef((props, ref) => {
+  const realInputRef = useRef(null);
+  useImperativeHandle(ref, () => ({
+    // Only expose focus and nothing else
+    focus() {
+      realInputRef.current.focus();
+    },
+  }));
+  return <input {...props} ref={realInputRef} />;
+});
+
+export default function Form() {
+  const inputRef = useRef(null);
+
+  function handleClick() {
+    inputRef.current.focus();
+  }
+
+  return (
+    <>
+      <MyInput ref={inputRef} />
+      <button onClick={handleClick}>
+        Focus the input
+      </button>
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+여기서 `MyInput` 내부의 `realInputRef`는 실제 input 돔 노드를 보유한다. 하지만 `useImperativeHandle`은 부모 컴포넌트에 대한 ref 값으로 고유한 특수 객체를 제공하도록 리액트에게 지시한다. 따라서 Form 컴포넌트 내부의 `inputRef.current`에는 `focus()` 메서드만 있다. 이 경우 ref "handle"은 돔 노드가 아니라 `useImperativeHandle` 호출 내부에서 생성한 커스텀 객체이다.
+</DeepDive>
+
+- - -
+
+## 리액트가 ref를 첨부할 때
+
+리액트에서는 모든 업데이트가 두 단계로 나뉜다:
+
+- 렌더링하는 동안 리액트는 컴포넌트를 호출하여 화면에 무엇이 표시되어야 하는지 파악한다.
+- 커밋하는 동안 리액트는 돔에 변경사항을 적용한다. 
+
+<br/>
+
+일반적으로 렌더링 중에는 ref에 엑세스하고 싶지 않을 것이다. 돔 노드를 보유하는 ref도 마찬가지이다. 첫번째 렌더링 중에는 돔 노드가 아직 생성되지 않았으므로 ref.current는 null이 된다. 그리고 업데이트를 렌더링하는 동안에는 돔 노드가 아직 업데이트되지 않았다. 따라서 이를 읽기에는 너무 이르다. 
+
+<br/>
+
+리액트는 커밋하는 동안 `ref.current`를 설정한다. 돔을 업데이트하기 전에 리액트는 영향을 받는 `ref.current`의 값을 `null`로 설정한다. 돔을 업데이트하자마자 즉시 리액트는 `ref.current`를 해당 돔 노드에 설정한다. 
+
+<br/>
+
+일반적으로 이벤트 핸들러에서 ref에 엑세스한다. ref로 무언가를 하고 싶지만 이를 수행할 특정 이벤트가 없는 경우 Effect가 필요할 수 있다. 
+
+<DeepDive>
+### Flushing state는 `flushSync`와 동기적으로 업데이트된다.
+
+새 todo를 추가하고, 목록의 마지막 하위 항목까지 화면을 아래로 스크롤하는 다음과 같은 코드를 생각해봐라. 어떤 이유에서인지 항상 마지막으로 추가한 항목 "바로 앞에 있던" todo로 스크롤되는 것을 확인할 수 있다. 
+
+<CodeBlock>
+{`import { useState, useRef } from 'react';
+
+export default function TodoList() {
+  const listRef = useRef(null);
+  const [text, setText] = useState('');
+  const [todos, setTodos] = useState(
+    initialTodos
+  );
+
+  function handleAdd() {
+    const newTodo = { id: nextId++, text: text };
+    setText('');
+    setTodos([ ...todos, newTodo]);
+    listRef.current.lastChild.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest'
+    });
+  }
+
+  return (
+    <>
+      <button onClick={handleAdd}>
+        Add
+      </button>
+      <input
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+      <ul ref={listRef}>
+        {todos.map(todo => (
+          <li key={todo.id}>{todo.text}</li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+let nextId = 0;
+let initialTodos = [];
+for (let i = 0; i < 20; i++) {
+  initialTodos.push({
+    id: nextId++,
+    text: 'Todo #' + (i + 1)
+  });
+}`}
+</CodeBlock>
+
+문제는 바로 이 두 줄에 있다.
+
+<CodeBlock>
+{`setTodos([ ...todos, newTodo]);
+listRef.current.lastChild.scrollIntoView();`}
+</CodeBlock>
+
+리액트에서는 상태 업데이트가 큐에 대기한다. 일반적으로 이것은 사용자가 원하는 것이다. 하지만 여기서는 `setTodos`가 돔을 즉시 업데이트하지 않기 때문에 문제가 발생한다. `setTodos`가 돔을 업데이트하기 전에 `listRef.current.lastChild`는 이전 마지막 todo를 가리킨다. 따라서 목록을 lastChild로 스크롤 할 때 할일이 아직 추가되지 않은 상태이다. 이것이 스크롤이 항상 한 항목씩 뒤쳐지는 이유이다.
+
+<br/>
+
+이 문제를 해결하려면 리액트가 돔을 동기적으로 업데이트("flush") 하도록 강제할 수 있다. 이렇게 하려면 `react-dom`에서 `flushSync`를 가져와서 상태 업데이트를 `flushSync` 호출로 감싸면 된다.
+
+<CodeBlock>
+{`flushSync(() => {
+  setTodos([ ...todos, newTodo]);
+});
+listRef.current.lastChild.scrollIntoView();`}
+</CodeBlock>
+
+이렇게 하면 `flushSync`로 래핑된 코드가 실행된 직후 리액트가 돔을 동기적으로 업데이트하도록 지시한다. 그 결과, 스크롤을 시도할 때 마지막 할 일이 이미 DOM에 있을 것이다. 
+
+#### 최종코드
+<CodeBlock>
+{`import { useState, useRef } from 'react';
+import { flushSync } from 'react-dom';
+
+export default function TodoList() {
+  const listRef = useRef(null);
+  const [text, setText] = useState('');
+  const [todos, setTodos] = useState(
+    initialTodos
+  );
+
+  function handleAdd() {
+    const newTodo = { id: nextId++, text: text };
+    flushSync(() => {
+      setText('');
+      setTodos([ ...todos, newTodo]);      
+    });
+    listRef.current.lastChild.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest'
+    });
+  }
+
+  return (
+    <>
+      <button onClick={handleAdd}>
+        Add
+      </button>
+      <input
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+      <ul ref={listRef}>
+        {todos.map(todo => (
+          <li key={todo.id}>{todo.text}</li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+let nextId = 0;
+let initialTodos = [];
+for (let i = 0; i < 20; i++) {
+  initialTodos.push({
+    id: nextId++,
+    text: 'Todo #' + (i + 1)
+  });
+}
+`}
+</CodeBlock>
+</DeepDive>
+
+- - - 
+
+## ref를 사용한 DOM 조작  모범 사례
+
+Ref는 탈출구이다. "리액트 외부로 나가야"할 때만 사용해야 한다. 일반적인 예로는 포커스, 스크롤 위치를 관리하거나 리액트가 노출되지 않는 브라우저 API를 호출하는 것이 있다.
+
+<br/>
+
+포커싱이나 스크롤과 같은 비파괴적인(non-dirstructive) 동작을 고수한다면 문제가 발생하지 않을 것이다. 하지만 돔을 수동으로 수정하려고 하면 리액트가 수행하는 변경 사항과 충돌할 위험이 있다. 
+
+<br/>
+
+이 문제를 설명하기 위해 이 예시에는 welcome 메시지와 두 개의 버튼이 포함되어 있다. 첫번째 버튼은 리액트에서 일반적으로 하는 것처럼 조건부 렌더링과 상태를 사용해 그 존재 여부를 토글한다. 두 번째 버튼은 `remove()` DOM API를 사용해 리액트가 제어할 수 없는 돔에서 강제러 제거한더. 
+
+<CodeBlock>
+{`import { useState, useRef } from 'react';
+
+export default function Counter() {
+  const [show, setShow] = useState(true);
+  const ref = useRef(null);
+
+  return (
+    <div>
+      <button
+        onClick={() => {
+          setShow(!show);
+        }}>
+        Toggle with setState
+      </button>
+      <button
+        onClick={() => {
+          ref.current.remove();
+        }}>
+        Remove from the DOM
+      </button>
+      {show && <p ref={ref}>Hello world</p>}
+    </div>
+  );
+}
+`}
+</CodeBlock>
+
+<WhiteCard>
+  <Counter/>
+</WhiteCard>
+돔 요소를 수동으로 제거한 후 setState를 사용하여 다시 표시하려고 하면 충돌이 발생한다. 이는 사용자가 돔을 변경했고 리액트가 이를 계속 올바르게 관리하는 방법을 모르기 때문이다. 
+
+<br/>
+
+리액트가 관리하는 돔 노드를 변경하지 마세요. 리액트가 관리하는 엘리먼트를 수정하거나, 자식을 추가하거나, 자식을 제거하면 위와 같이 일관성 없는 시각적 결과나 충돌이 발생할 수 있다. 
+
+<br/>
+
+하지만 그렇다고 해서 전혀 할 수 없다는 의미는 아니고, 주의가 필요하다는 뜻이다. 리액트가 업데이트할 이유가 없는 돔의 일부를 안전하게 수정할 수 있다. 예를 들어, JSX에서 일부 `<div>`가 항상 비어있는 경우 리액트는 그 자식 목록을 건드릴 이유가 없다. 따라서 수동으로 요소를 추가하거나 제거하는 것이 안전하다.
+
+
+<WhiteCard title='요약'>
+- Ref는 일반적인 개념이지만 대부분의 경우 DOM 요소를 보유하는데 사용함
+- `<div ref={myRef}>`를 전달하여 리액트에 돔 노드를 `myRef.current`에 넣으라고 지시한다. 
+- 보통 포커스 맞추기, 스크롤, 돔 요소 측정과 같은 비파괴적인 동작에 ref를 사용한다.
+- 컴포넌트는 기본적으로 돔 노드를 노출하지 않는다,
+  - `forwardRef`를 사용하고 두 번째 `ref` 인수를 특정 노드에 전달하여 돔 노드를 노출하도록 선택할 수 있다.
+- 리액트가 관리하는 돔 노드를 변경하지 마라
+- 리액트가 관리하는 돔 노드를 수정해야 하는 경우 리액트가 업데이트할 이유가 없는 부분만 수정해라.
+</WhiteCard>

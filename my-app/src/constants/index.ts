@@ -93,11 +93,11 @@ const navbarData = [
                 href: '../../managing-state/extracting-state-logic-into-a-reducer',
             },
             {
-                title: 'passing-data-deeply-with-context',
+                title: 'Context로 데이터를 깊숙히 전달',
                 href: '../../managing-state/passing-data-deeply-with-context',
             },
             {
-                title: 'scaling-up-with-reducer-and-context',
+                title: 'Reducer와 Context로 확장하기',
                 href: '../../managing-state/scaling-up-with-reducer-and-context',
             },
         ]
@@ -106,11 +106,11 @@ const navbarData = [
         category: 'Escape Hatches',
         children: [
             {
-                title: 'Referencing Values with Refs',
+                title: 'Refs로 값 참조하기',
                 href: '../../escape-hatches/referencing-values-with-refs',
             },
             {
-                title: 'Manipulating the DOM with Refs',
+                title: 'Ref로 돔 조작하기',
                 href: '../../escape-hatches/manipulating-the-dom-with-refs',
             },
             {
