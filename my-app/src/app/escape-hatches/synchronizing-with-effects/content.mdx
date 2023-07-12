@@ -696,13 +696,286 @@ Effect로 무언가를 fetch 하는 경우, cleanup 함수는 fetch를 중단하
 }, [userId]);`}
 </CodeBlock>
 
-이미 발생한 네트워크 요청을 "실행취소" 할 수는 없지만, cleanup 함수를 사용하면 더 이상 관련이 없는 fetch가 어플리케이션에 계속 영향을 미치지 않도록 할 수 있다. 
+이미 발생한 네트워크 요청을 "실행취소" 할 수는 없지만, cleanup 함수를 사용하면 더 이상 관련이 없는 fetch가 어플리케이션에 계속 영향을 미치지 않도록 할 수 있다. `userId`가 'Alice'에서 'Bob'으로 변경된 경우, 클린업 기능을 사용하면 'Bob' 이후에 도착하더라도 'Alice'에 대한 응답을 무시할 수 있다.
 
+<br/>
+
+개발 단계에서는 네트워크 탭에 2개의 fetches가 표시된다. 이는 잘못된 것이 아니다. 위의 접근 방식을 사용하면 첫 번째 Effect가 즉시 정리되어 `ignore` 변수의 복사본이 `true`로 설정된다. 따라서 추가 요청이 있더라도 `if (!ignore)` 검사 덕분에 상태에 영향을 미치지 않는다.
+
+<br/>
+
+프로덕션 환경에소는 요청이 하나만 있을 것이다. 개발 단계에서 두 번째 요청이 귀찮다면, 중복 요청을 제거하고 컴포넌트 간에 응답을 캐시하는 솔루션을 사용하는 것이 가장 좋은 방법이다:
+
+<CodeBlock>
+{`function TodoList() {
+  const todos = useSomeDataLibrary('/api/user/' + userId + '/todos');
+  // ...`}
+</CodeBlock>
+
+이렇게 하면 개발 환경이 개선될 뿐만 아니라 어플리케이션이 더 빠르게 느껴진다. 예를 들어, 사용자가 뒤로 버튼을 누르면 일부 데이터가 캐시되므로 다시 로드될 때까지 기다릴 필요가 없다. 이러한 캐시를 직접 빌드하거나 Effects에서 수동 가져오기에 대한 여러 대안 중 하나를 사용할 수 있다. 
+
+<DeepDive>
+### Effects에서 데이터 fetching을 대체할 수 있는 좋은 대안은 무엇인가요?
+
+fully client side app 에서 데이터를 fetch 하기 위해 Effect 내에서 `fetch()`를 호출하는 것은 널리 사용되는 방법이다. 하지만 이는 매우 수동적인 접근 방식이며 상당한 단점이 있다:
+
+- Effects는 서버에서 실행되지 않는다. 즉, 초기 서버에서 렌더링되는 HTML에는 데이터가 없는 로딩 상태만 포함된다. 클라이언트 컴퓨터는 모든 자바스크립트를 다운로드하고 앱을 렌더링해야만 이제 데이터를 로드해야 한다는 것을 알게된다, 이는 매우 비효울적이다.
+- Effect에서 직접 fetch를 사용하면 "network waterfalls"를 쉽게 만들 수 있다. 부모 컴포넌트를 렌더링하고, 부모 컴포넌트가 일부 데이터를 fetch 하고, 자식 컴포넌트를 렌더링한 다음, 자식 컴포넌트가 데이터를 fetch 하기 시작한다. 네트워크가 매우 빠르지 않은 경우 모든 데이터를 병렬로 가져오는 것보다 훨씬 느리다.
+- Effect에서 직접 fetch 하는 것은 일반적으로 데이터를 미리 로드하거나 캐시하지 않는다는 의미이다. 예를 들어 컴포넌트가 언마운트 됐다가 다시 마운트되는 경우, 데이터를 다시 가져와야 한다.
+- 인체공학적(ergonomic)으로 좋지 않다. [race condition](https://maxrozen.com/race-conditions-fetching-data-react-with-useeffect)과 같은 버그가 발생하지 않는 방식으로 `fetch` 호출을 작성하려면 보일러 플레이트가 상당히 많이 필요하다.
+
+이 단점 목록은 리액트에만 국한된 것이 아니다. 모든 라이브러리를 사용한 마운트에서 데이터를 fetch할 때 적용된다. 라우팅과 마찬가지로 데이터를 페칭도 제대로 수행하기 쉽지 않으므로 다음과 같은 접근 방식을 권장한다:
+
+- 프레임워크를 사용하는 경우, 프레임워크에 내장된 data fetching 메커니즘을 사용해라. 최신 리액트 프레임워크에는 효율적이고 위의 함정이 발생하지 않는 통합 데이터 불러오기 메커니즘이 있다.
+- 그렇지 않으면 클라이언트 사이드 캐시를 사용하거나 빌드하는 것을 고려해라. 인기있는 오픈소스 솔루션으로는 리액트쿼리, SWR, React Router 6.4+ 등이 있다. 자체 솔루션을 구축할 수도 있는데, 이 경우 내부적으로 Effects를 사용하되 중복 요청 제거, 응답 캐싱, 네트워크 워터폴 방지(데이터를 미리 로드하거나 데이터 요구사항을 routes에 호스팅하기)
+
+이 두 가지 방법 중 어느 것도 적합하지 않은 경우 Effects에서 직접 데이터를 fetch할 수 있다.
+</DeepDive>
 
 ### 애널리틱스 전송
+
+페이지 방문 시 애널리틱스 이벤트를 전송하는 이 코드를 살펴보자:
+
+<CodeBlock>
+{`useEffect(() => {
+  logVisit(url); // Sends a POST request
+}, [url]);`}
+</CodeBlock>
+
+개발 단계에서는 모든 URL에 대해 `logVisit`이 두 번 호출되므로 이를 수정하고 싶을 수 있다. 이 코드는 그대로 유지하는 것이 좋다. 
+
 ### Not an Effect: 어플리케이션 초기화
+
+일부 로직은 애플리케이션이 시작될 때 한 번만 실행되어야 한다. 컴포넌트 외부에 배치할 수 있다.
+<CodeBlock>
+{`if (typeof window !== 'undefined') { // Check if we're running in the browser.
+  checkAuthToken();
+  loadDataFromLocalStorage();
+}
+
+function App() {
+  // ...
+}`}
+
+이렇게 하면 브라우저가 페이지를 로드한 후 해당 로직이 한 번만 실행하도록 보장한다.
+</CodeBlock>
+
 ### Not an Effect: 상품 구매
+
+cleanup 함수를 작성하더라도 사용자가 effect를 두 번 실행하는 결과를 방지할 방법이 없는 경우가 있다. 예를 들어 Effect가 제품 구매와 같은 POST 요청을 전송할 수 있다. 
+
+<CodeBlock>
+{`useEffect(() => {
+  // 🔴 Wrong: This Effect fires twice in development, exposing a problem in the code.
+  fetch('/api/buy', { method: 'POST' });
+}, []);`}
+</CodeBlock>
+
+제품을 두 번 구매하고 싶지 않을 것이다. 이 로직을 Effect에 넣지 말아야 하는 이유이기도 하다. 사용자가 다른 페이지로 이동한 후 뒤로 버튼을 누르면 ? -> Effect가 다시 실행될 것이다.
+
+<br/>
+
+구매는 렌더링으로 인해 발생하는 것이 아니라 특정한 상호작용으로 인해 발생한다. 사용자가 버튼을 누를 때만 실행되어야 한다. Effect를 삭제하고 `/api/buy` 요청을 `<Buy>`버튼 이벤트 핸들러로 이동해라.
+
+<CodeBlock>
+{`  function handleClick() {
+    // ✅ Buying is an event because it is caused by a particular interaction.
+    fetch('/api/buy', { method: 'POST' });
+  }`}
+</CodeBlock>
+
+사용자 관점에서 페이지를 방문하는 것은 페이지를 방문하고 링크를 클릭한후 "뒤로가기" 버틑을 누르는 것과 다르지 않아야 한다. 리액트는 개발 단계에서 컴포넌트를 한 번 다시 마운트하여 이 원칙을 준수하는지 확인한다.
 - - - 
 
 ## 모든 것을 종합하기
 
+이 예제에서는 setTimeout을 사용하여 effect가 실행된 후 3초 후에 input text가 포함된 콘솔 로그가 표시되도록 예약한다. cleanup 함수는 pending 중인 timeout을 취소한다.
+
+
+<CodeBlock>
+{`import { useState, useEffect } from 'react';
+
+function Playground() {
+  const [text, setText] = useState('a');
+
+  useEffect(() => {
+    function onTimeout() {
+      console.log('⏰ ' + text);
+    }
+
+    console.log('🔵 Schedule "' + text + '" log');
+    const timeoutId = setTimeout(onTimeout, 3000);
+
+    return () => {
+      console.log('🟡 Cancel "' + text + '" log');
+      clearTimeout(timeoutId);
+    };
+  }, [text]);
+
+  return (
+    <>
+      <label>
+        What to log:{' '}
+        <input
+          value={text}
+          onChange={e => setText(e.target.value)}
+        />
+      </label>
+      <h1>{text}</h1>
+    </>
+  );
+}
+
+export default function App() {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      <button onClick={() => setShow(!show)}>
+        {show ? 'Unmount' : 'Mount'} the component
+      </button>
+      {show && <hr />}
+      {show && <Playground />}
+    </>
+  );
+}
+`}
+</CodeBlock>
+
+input에 무언가를 입력한 다음 즉시 "Unmout The Component"를 클릭하면, 마지막 타임아웃을 지운다.
+
+<br/>
+
+위의 코드에서 cleanup 함수를 주석 처리하여 timeout이 취소되지 않도록 해보자. abcde를 input 창에 빠르게 입력해보세요. 3초 후에 어떤 일이 일어날까요?
+
+<br/>
+
+3초 후, 5개의 abcde로그가 아니라 일련의 로그(a, ab, abc, abcd, abcde)가 표시되어야 한다. 각 Effect는 해당 렌더링에서 `text` value를 캡쳐한다. `text` 상태가 변경되었는지 여부는 중요하지 않다. `text = ab`인 렌더의 Effect는 항상 `ab`를 표시한다. 즉, 각 렌더링의 effect는 서로 분리되어 있다. 이것이 어떻게 작동하는지 궁금하다면 [클로저](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)에 대해 읽어보세요.
+
+<DeepDive>
+
+### 각 렌더링에는 고유한 Effect가 있다.
+
+`useEffect`를 렌더링 output에 동작을 "첨부"하는 것으로 생각할 수 있다.
+
+<CodeBlock>
+{`export default function ChatRoom({ roomId }) {
+  useEffect(() => {
+    const connection = createConnection(roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]);
+
+  return <h1>Welcome to {roomId}!</h1>;
+}`}
+</CodeBlock>
+
+#### 1. Initial render
+
+사용자가 `<ChatRoom roomId='general'>`을 방문한다.
+
+<CodeBlock>
+{`  // JSX for the first render (roomId = "general")
+  return <h1>Welcome to general!</h1>;`}
+</CodeBlock>
+
+Effect는 렌더링 ouput의 일부이기도 하다. 다음은 첫번째 렌더링의 Effect이다.
+
+<CodeBlock>
+{`  // Effect for the first render (roomId = "general")
+  () => {
+    const connection = createConnection('general');
+    connection.connect();
+    return () => connection.disconnect();
+  },
+  // Dependencies for the first render (roomId = "general")
+  ['general']`}
+</CodeBlock>
+
+리액트는 `'general'` 채팅방에 연결되는 이 Effect를 실행한다.
+
+
+#### 2. 리렌더링 with same value
+
+`<ChatRoom roomId='general'>`을 리렌더한다고 가정해보자. JSX 출력은 동일하다.
+
+<CodeBlock>
+{`  // JSX for the second render (roomId = "general")
+  return <h1>Welcome to general!</h1>;`}
+</CodeBlock>
+
+
+리액트는 렌더링 output이 변경되지 않았다고 판단하여 DOM을 업데이트하지 않는다.
+
+<br/>
+
+두 번째 렌더링의 Effect는 다음과 같다.
+
+<CodeBlock>
+{`  // Effect for the second render (roomId = "general")
+  () => {
+    const connection = createConnection('general');
+    connection.connect();
+    return () => connection.disconnect();
+  },
+  // Dependencies for the second render (roomId = "general")
+  ['general']`}
+</CodeBlock>
+
+리액트는 "두 번째 렌더링의 `['general']`"과 "첫번째 렌더링의 `['general']`"을 비교한다. 모든 의존성이 동일하기 때문에 리액트는 두 번째 렌더링의 Effect를 무시한다. 이는 호출되지 않는다.
+
+#### 3. 리렌더링 with different value
+
+`<ChatRoom roomId='general'>`을 `<ChatRoom roomId='travel'>`으로 변경한다. 이번에는 다른 JSX를 반환한다.
+
+<CodeBlock>
+{`  // JSX for the third render (roomId = "travel")
+  return <h1>Welcome to travel!</h1>;`}
+</CodeBlock>
+
+리액트가 돔을 업데이트하여 `"Welcome to general"`에서 `"Welcome to travel"`로 변경한다.
+
+<br/>
+
+세번째 렌더링의 Effect는 다음과 같다.
+
+<CodeBlock>
+{`  // Effect for the third render (roomId = "travel")
+  () => {
+    const connection = createConnection('travel');
+    connection.connect();
+    return () => connection.disconnect();
+  },
+  // Dependencies for the third render (roomId = "travel")
+  ['travel']`}
+</CodeBlock>
+
+React는 세 번째 렌더링의 `['travel']`을 두 번째 렌더링의 `['general']`과 비교한다. 하나의 dependency가 다르다: `Object.is('travel', 'general')`가 `false`이다. Effect는 스킵될 수 없다. 
+
+<br/>
+
+React가 세 번째 렌더링에서 Effect를 적용하기 전에, 마지막으로 실행한 Effect를 cleanup해야 한다. 두 번째 렌더링의 Effect가 건너뛰었기 때문에 React는 <u>첫 번째 렌더링의 Effect</u>를 정리해야 한다. 첫 번째 렌더링까지 거슬러 올라가면, 그 cleanup이 `createConnection('general')`로 생성된 연결에서 `disconnect()`를 호출하는 것을 볼 수 있다. 그러면 `'general'` 채팅방에서 앱의 연결이 끊어진다.
+
+<br/>
+
+그 후 React는 세 번째 렌더링의 Effect를 실행한다. `'travel'` 채팅방에 연결한다.
+
+#### 4. 언마운트
+
+마지막으로, 사용자가 다른 곳으로 이동하여 `ChatRoom` 컴포넌트가 언마운트된다고 가정해보자. 리액트는 마지막 Effect의 cleanup 함수를 실행한다. 마지막 Effect는 세 번째 렌더링에서 나온 것이다. 세 번째 렌더링의 cleanup은 `createConnection('travel')` 연결을 파괴한다. 따라서 `'travel'` 채팅방에서 앱의 연결이 끊어진다.
+
+#### 🏭 Development-only 동작
+
+엄격모드가 켜져있으면 리액트는 마운트 후 모든 컴포넌트를 한 번 <b>다시 마운트</b>한다. (state와 DOM은 보존된다.) 이렇게 하면 cleanup이 필요한 Effect를 쉽게 찾을 수 있고 경쟁 조건과 같은 버그를 조기에 발견할 수 있다. 또한 개발 중에 파일을 저장할 떄마다 리액트는 Effect를 **다시 마운트(리마운트)**한다. 이 두 가지 동작은 모두 개발 중에만 발생한다.
+</DeepDive>
+
+<WhiteCard title='요약'>
+- 이벤트와 달리 effect는 특정 상호작용이 아닌 렌더링 자체로 인해 발생
+- Effect를 사용하면 컴포넌트를 외부 시스템(써드파티 API, 네트워크 등)과 동기화할 수 있다.
+- 기본적으로 Effect는 모든 렌더링 **후에** 실행된다.(첫 렌더링 포함)
+- 모든 dependencies의 값이 마지막 렌더 때와 같으면 리액트는 effect를 스킵한다.
+- dependencies를 선택할 수는 없다. Effect 내부의 코드에 의해 결정
+- 빈 의존성 배열은 컴포넌트가 "mount" 될 때 한 번만 effect를 실행한다.
+- 엄격보드에서 리액트는 컴포넌트를 두 번 마운트하여 effect를 stress-test한다.
+- 다시 마운트하는 과정에서 effect가 깨지는 경우, cleanup 함수를 구현해야 한다.
+- 리액트는 다음 번에 effect가 실행되기 전과, 언마운트 중에 cleanup 함수를 호출한다. 
+</WhiteCard>
