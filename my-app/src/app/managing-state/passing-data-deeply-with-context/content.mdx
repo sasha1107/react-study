@@ -1,3 +1,479 @@
 import { WhiteCard, ColorCard, DeepDive, Highlight, CodeBlock, Pitfall, RedCard, AlertBanner } from '@app/components';
 
-# Title
+# Context로 data를 깊숙히 전달하기
+
+일반적으로 부모 컴포넌트에서 자식 컴포넌트로 정보를 전달할 때에는 props를 통해 전달한다. 하지만 중간에 여러 컴포넌트를 거쳐야 하거나 앱의 여러 컴포넌트가 같은 정보를 필요로 하는 경우에 props로 정보를 전달하는 것은 장황하고 불편할 수 있다. 이런 경우에는 Context를 사용하여 정보를 전달하는 것이 좋다. Context를 사용하면 부모 컴포넌트에서 props로 정보를 전달하지 않고도 모든 컴포넌트가 정보를 사용할 수 있다.
+
+<WhiteCard title='You will learn'>
+- "props drilling" 이란?
+- props 전달을 context로 대체하는 법
+- context의 일반적인 유즈케이스
+- context의 일반적인 대안들
+</WhiteCard>
+
+- - -
+
+## props 전달의 문제점
+
+props 전달은 UI 트리를 통해 데이터를 사용하는 컴포넌트로 명시적으로 파이프할 수 있는 좋은 방법이다.
+
+<br/>
+
+하지만 props 전달은 장황하고 불편해질 수 있다 -- props를 트리 깊숙히 전달해야 하거나 여러 컴포넌트에 동일한 props가 필요한 경우
+
+가장 가까운 공통 조상은 데이터가 필요한 컴포넌트에서 멀리 떨어져 있을 수 있으며, 상태를 높이 끌어올리면 "props drilling"이 발생할 수 있다.
+
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpassing_data_lifting_state.png&w=1920&q=75)
+
+![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpassing_data_prop_drilling.png&w=1920&q=75)
+
+props를 전달하지 않고도 트리에서 데이터를 필요한 컴포넌트로 'teleport' 할 수 있는 방법이 있다면 좋지 않을까? React의 context 기능을 사용하면 가능하다!
+
+- - - 
+
+## Context: props 전달의 대안
+
+context를 사용하면 상위 컴포넌트가 그 아래 전체 트리에 데이터를 제공할 수 있다. context는 다양한 용도로 사용된다. 다음은 한 가지 예시이다. 크기에 대한 `level`을 받아들이는 `Heading` 컴포넌트를 생각해보자.
+
+<CodeBlock>
+{`function Heading({ level, children }) {
+  switch (level) {
+    case 1:
+      return <h1>{children}</h1>;
+    case 2:
+      return <h2>{children}</h2>;
+    case 3:
+      return <h3>{children}</h3>;
+    case 4:
+      return <h4>{children}</h4>;
+    case 5:
+      return <h5>{children}</h5>;
+    case 6:
+      return <h6>{children}</h6>;
+    default:
+      throw Error('Unknown level: ' + level);
+  }
+}
+function Section({ children }) {
+  return (
+    <section className="section">
+      {children}
+    </section>
+  );
+}
+export default function Page() {
+  return (
+    <Section>
+      <Heading level={1}>Title</Heading>
+      <Heading level={2}>Heading</Heading>
+      <Heading level={3}>Sub-heading</Heading>
+      <Heading level={4}>Sub-sub-heading</Heading>
+      <Heading level={5}>Sub-sub-sub-heading</Heading>
+      <Heading level={6}>Sub-sub-sub-sub-heading</Heading>
+    </Section>
+  );
+`}
+</CodeBlock>
+
+동일한 섹션 내에 여러 제목이 항상 같은 크기를 갖도록 하려고 한다. 
+
+<CodeBlock>
+{`import Heading from './Heading.js';
+import Section from './Section.js';
+
+export default function Page() {
+  return (
+    <Section>
+      <Heading level={1}>Title</Heading>
+      <Section>
+        <Heading level={2}>Heading</Heading>
+        <Heading level={2}>Heading</Heading>
+        <Heading level={2}>Heading</Heading>
+        <Section>
+          <Heading level={3}>Sub-heading</Heading>
+          <Heading level={3}>Sub-heading</Heading>
+          <Heading level={3}>Sub-heading</Heading>
+          <Section>
+            <Heading level={4}>Sub-sub-heading</Heading>
+            <Heading level={4}>Sub-sub-heading</Heading>
+            <Heading level={4}>Sub-sub-heading</Heading>
+          </Section>
+        </Section>
+      </Section>
+    </Section>
+  );
+}
+`}
+</CodeBlock>
+
+현재, `level` prop이 각 `Heading` 컴포넌트에 개별적으로 전달된다:
+
+<CodeBlock>
+{`<Section>
+  <Heading level={3}>About</Heading>
+  <Heading level={3}>Photos</Heading>
+  <Heading level={3}>Videos</Heading>
+</Section>`}
+</CodeBlock>
+
+`level` prop을 `section` 컴포넌트에 전달하고 `Heading`에서 제거할 수 있다면 좋을 것이다. 이렇게 하면 같은 섹션의 모든 제목이 같은 크기를 갖도록 강제할 수 있다:
+
+<CodeBlock>
+{`<Section level={3}>
+  <Heading>About</Heading>
+  <Heading>Photos</Heading>
+  <Heading>Videos</Heading>
+</Section>`}
+</CodeBlock>
+
+하지만 `Heading` 컴포넌트가 가장 가까운 `Section`의 레벨을 어떻게 알 수 있을까? 그러기 위해서는 자식이 트리 위 어딘가에서 데이터를 "요청(ask)"할 수 있는 방법이 필요하다.
+
+<br/>
+
+props 만으로는 부족하다. 이때 context가 중요한 역할을 한다. 이는 세 단계로 진행한다:
+
+<br/>
+
+1. create context
+2. 데이터가 필요한 컴포넌트에서 해당 context를 사용
+3. 데이터를 구체화하는 컴포넌트에서 해당 컨텍스트를 제공
+
+<br/>
+
+컨텍스트는 멀리 떨어여있는 상위 트리라도 그 안에 있는 전체 트리에 데이터를 제공할 수 있게 해준다.
+
+
+- 가까운 children에서 context 사용
+    ![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpassing_data_context_close.png&w=1920&q=75)
+- 먼 children에서 context 사용
+    ![](https://react.dev/_next/image?url=%2Fimages%2Fdocs%2Fdiagrams%2Fpassing_data_context_far.png&w=1920&q=75)
+
+- - -
+
+## STEP 1: Context 생성
+
+먼저 컨텍스트를 만들어야 한다. 컴포넌트에서 컨텍스트를 사용할 수 있도록 export 해야 한다.
+
+### LevelContext.js
+
+<CodeBlock>
+{`import { createContext } from 'react';
+
+export const LevelContext = createContext(1);`}
+</CodeBlock>
+
+`createContext`의 유일한 인자는 default value이다. 여기서 `1`은 가장 큰 제목 level을 의미한다. 그리고 기본값으로는 모든 종류의 값(객체 포함)을 전달할 수 있다. 기본값의 중요성은 다음 단계에서 확인할 수 있다. 
+
+- - -
+
+## STEP 2: Context 사용
+
+`useContext` 훅을 import 하여 컨텍스트를 사용할 수 있다. 
+
+<CodeBlock>
+{`import { useContext } from 'react';
+import { LevelContext } from './LevelContext.js';`}
+</CodeBlock>
+
+현재 `Heading` 컴포넌트는 `level` prop을 받아서 사용한다. 
+
+<CodeBlock>
+{`export default function Heading({ level, children }) {
+  // ...
+}`}
+</CodeBlock>
+
+`level` props를 제거하고 방금 import한 contexy인 `LevelContext`에서 값을 읽습니다:
+
+<CodeBlock>
+{`export default function Heading({ children }) {
+  const level = useContext(LevelContext);
+  // ...
+}`}
+</CodeBlock>
+
+`useContext`는 훅이다. `useState`, `useReducer`와 마찬가지로 리액트 컴포넌트 내부(루프나 조건문 내부가 아닌)에서만 훅을 호출할 수 있다. `useContext`는 `Heading` 컴포넌트가 `LevelContext`를 읽기를 원한다고 리액트에 알려준다.
+
+<br/>
+
+이제 `Heading` 컴포넌트에는 `level` 프로퍼티가 없으므로 더 이상 JSX에서 이런 식으로 `Heading`에 `level` 프로퍼티를 전달할 필요가 없습니다:
+
+<CodeBlock>
+{`<Section>
+  <Heading level={4}>Sub-sub-heading</Heading>
+  <Heading level={4}>Sub-sub-heading</Heading>
+  <Heading level={4}>Sub-sub-heading</Heading>
+</Section>
+`}
+</CodeBlock>
+
+`Section`이 `level` props를 받도록 JSX를 업데이트한다:
+
+<CodeBlock>
+{`<Section level={4}>
+  <Heading>Sub-sub-heading</Heading>
+  <Heading>Sub-sub-heading</Heading>
+  <Heading>Sub-sub-heading</Heading>
+</Section>`}
+</CodeBlock>
+
+아직 context를 provide 하지 않았기 때문에 아직 이 예제는 제대로 작동하지 않는다.  
+
+- - -
+
+## STEP 3: Context 제공(provide)
+
+`Section` 컴포넌트는 현재 그 자식을 렌더링합니다:
+
+<CodeBlock>
+{`export default function Section({ children }) {
+  return (
+    <section className="section">
+      {children}
+    </section>
+  );
+}`}
+</CodeBlock>
+
+context provider로 래핑하여 `LevelContext`를 제공하세요:
+
+<CodeBlock>
+{`import { LevelContext } from './LevelContext.js';
+
+export default function Section({ level, children }) {
+  return (
+    <section className="section">
+      <LevelContext.Provider value={level}>
+        {children}
+      </LevelContext.Provider>
+    </section>
+  );
+}`}
+</CodeBlock>
+
+
+이는 React에게 "이 `<Section>` 안에 있는 컴포넌트가 `LevelContext`를 요청하면 이 `level`을 제공하라"고 지시한다. 컴포넌트는 그 위에 있는 UI 트리에서 가장 가까운 `<LevelContext.Provider>`의 값을 사용한다.
+
+<br/>
+
+### App.js
+
+<CodeBlock>
+{`import Heading from './Heading.js';
+import Section from './Section.js';
+
+export default function Page() {
+  return (
+    <Section level={1}>
+      <Heading>Title</Heading>
+      <Section level={2}>
+        <Heading>Heading</Heading>
+        <Heading>Heading</Heading>
+        <Heading>Heading</Heading>
+        <Section level={3}>
+          <Heading>Sub-heading</Heading>
+          <Heading>Sub-heading</Heading>
+          <Heading>Sub-heading</Heading>
+          <Section level={4}>
+            <Heading>Sub-sub-heading</Heading>
+            <Heading>Sub-sub-heading</Heading>
+            <Heading>Sub-sub-heading</Heading>
+          </Section>
+        </Section>
+      </Section>
+    </Section>
+  );
+}
+`}
+</CodeBlock>
+
+### Section.js
+
+<CodeBlock>
+{`import { LevelContext } from './LevelContext.js';
+
+export default function Section({ level, children }) {
+  return (
+    <section className="section">
+      <LevelContext.Provider value={level}>
+        {children}
+      </LevelContext.Provider>
+    </section>
+  );
+}
+`}
+</CodeBlock>
+
+### Heading.js
+<CodeBlock>
+{`import { useContext } from 'react';
+import { LevelContext } from './LevelContext.js';
+
+export default function Heading({ children }) {
+  const level = useContext(LevelContext);
+  switch (level) {
+    case 1:
+      return <h1>{children}</h1>;
+    case 2:
+      return <h2>{children}</h2>;
+    case 3:
+      return <h3>{children}</h3>;
+    case 4:
+      return <h4>{children}</h4>;
+    case 5:
+      return <h5>{children}</h5>;
+    case 6:
+      return <h6>{children}</h6>;
+    default:
+      throw Error('Unknown level: ' + level);
+  }
+}
+`}
+</CodeBlock>
+
+### LevelContext.js
+<CodeBlock>
+{`import { createContext } from 'react';
+
+export const LevelContext = createContext(1);
+`}
+</CodeBlock>
+
+원래 코드와 동일한 결과이지만 각 `Heading` 컴포넌트에 `level` props를 전달할 필요가 없습니다! 대신, 위의 가장 가까운 `Section`에 요청하여 `Heading` `level`을 "파악"합니다:
+
+
+1. `level` 프로퍼티를 `<Section>`에 전달합니다.
+2. `<Section>`은 그 자식들을 `<LevelContext.Provider value={level}>`으로 래핑합니다.
+3. `Heading`은 `useContext(LevelContext)`로 위의 `LevelContext`값에 가장 가까운 값을 요청합니다.
+
+- - -
+
+## 동일한 컴포넌트에서 컨텍스트 사용 및 제공
+
+현재는 여전히 각 `Section`의 `level`을 수동으로 전달해야 한다:
+
+<CodeBlock>
+{`export default function Page() {
+  return (
+    <Section level={1}>
+      ...
+      <Section level={2}>
+        ...
+        <Section level={3}>
+          ...
+`}
+</CodeBlock>
+
+컨텍스트를 사용하면 위의 컴포넌트에서 정보를 읽을 수 있으므로 각 섹션은 위의 섹션에서 `level`을 읽고 `level + 1`을 자동으로 아래로 전달할 수 있습니다. 방법은 다음과 같다:
+
+<CodeBlock>
+{`import { useContext } from 'react';
+import { LevelContext } from './LevelContext.js';
+
+export default function Section({ children }) {
+  const level = useContext(LevelContext);
+  return (
+    <section className="section">
+      <LevelContext.Provider value={level + 1}>
+        {children}
+      </LevelContext.Provider>
+    </section>
+  );
+}`}
+</CodeBlock>
+
+이렇게 하면 `level` prop을 `Section`이나 `Heading` 컴포넌트에 전달할 필요가 없다:
+
+
+### App.js
+
+<CodeBlock>
+{`import Heading from './Heading.js';
+import Section from './Section.js';
+
+export default function Page() {
+  return (
+    <Section>
+      <Heading>Title</Heading>
+      <Section>
+        <Heading>Heading</Heading>
+        <Heading>Heading</Heading>
+        <Heading>Heading</Heading>
+        <Section>
+          <Heading>Sub-heading</Heading>
+          <Heading>Sub-heading</Heading>
+          <Heading>Sub-heading</Heading>
+          <Section>
+            <Heading>Sub-sub-heading</Heading>
+            <Heading>Sub-sub-heading</Heading>
+            <Heading>Sub-sub-heading</Heading>
+          </Section>
+        </Section>
+      </Section>
+    </Section>
+  );
+}
+`}
+</CodeBlock>
+
+### Section.js
+
+<CodeBlock>
+{`import { useContext } from 'react';
+import { LevelContext } from './LevelContext.js';
+
+export default function Section({ children }) {
+  const level = useContext(LevelContext);
+  return (
+    <section className="section">
+      <LevelContext.Provider value={level + 1}>
+        {children}
+      </LevelContext.Provider>
+    </section>
+  );
+}
+`}
+</CodeBlock>
+
+### Heading.js
+<CodeBlock>
+{`import { useContext } from 'react';
+import { LevelContext } from './LevelContext.js';
+
+export default function Heading({ children }) {
+  const level = useContext(LevelContext);
+  switch (level) {
+    case 0:
+      throw Error('Heading must be inside a Section!');
+    case 1:
+      return <h1>{children}</h1>;
+    case 2:
+      return <h2>{children}</h2>;
+    case 3:
+      return <h3>{children}</h3>;
+    case 4:
+      return <h4>{children}</h4>;
+    case 5:
+      return <h5>{children}</h5>;
+    case 6:
+      return <h6>{children}</h6>;
+    default:
+      throw Error('Unknown level: ' + level);
+  }
+}
+`}
+</CodeBlock>
+
+### LevelContext.js
+<CodeBlock>
+{`import { createContext } from 'react';
+
+export const LevelContext = createContext(0);`}
+</CodeBlock>
+
+이제 `Heading`과 `Section`은 모두 `LevelContext`를 읽어 얼마나 "깊은" `level`인지 파악합니다. 그리고 섹션은 그 자식들을 `LevelContext`로 래핑하여 그 안에 있는 모든 것이 "더 깊은" 레벨에 있음을 지정합니다.
+
+
+<ColorCard color='green' title='노트'>
+
+</ColorCard>
